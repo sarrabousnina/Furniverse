@@ -9,6 +9,7 @@ import styles from './ShopPage.module.css';
 const ShopPage = () => {
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
+  const searchParam = searchParams.get('search');
   const { rooms, getActiveRoom } = useRooms();
   const activeRoom = getActiveRoom();
 
@@ -27,6 +28,17 @@ const ShopPage = () => {
   // Filter and sort products
   const filteredProducts = useMemo(() => {
     let products = [...PRODUCTS];
+
+    // Filter by search query
+    if (searchParam) {
+      const searchLower = searchParam.toLowerCase();
+      products = products.filter(p =>
+        p.name.toLowerCase().includes(searchLower) ||
+        p.category.toLowerCase().includes(searchLower) ||
+        p.description?.toLowerCase().includes(searchLower) ||
+        p.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+      );
+    }
 
     // Filter by category
     if (categoryParam) {
@@ -76,7 +88,7 @@ const ShopPage = () => {
     }
 
     return products;
-  }, [categoryParam, selectedCategories, selectedStyles, priceRange, sortBy]);
+  }, [categoryParam, searchParam, selectedCategories, selectedStyles, priceRange, sortBy]);
 
   // Toggle category filter
   const toggleCategory = (category) => {
@@ -102,7 +114,9 @@ const ShopPage = () => {
         {/* Header */}
         <div className={styles.header}>
           <h1 className={styles.title}>
-            {categoryParam
+            {searchParam
+              ? `Search results for "${searchParam}"`
+              : categoryParam
               ? CATEGORIES.find(c => c.id === categoryParam)?.name || 'All Products'
               : 'Shop All Furniture'}
           </h1>
@@ -213,7 +227,9 @@ const ShopPage = () => {
                 <div className={styles.noResultsIcon}>🔍</div>
                 <h3 className={styles.noResultsTitle}>No products found</h3>
                 <p className={styles.noResultsText}>
-                  Try adjusting your filters to see more results
+                  {searchParam
+                    ? `No results found for "${searchParam}". Try different keywords or adjust your filters.`
+                    : 'Try adjusting your filters to see more results'}
                 </p>
               </div>
             ) : (

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import styles from './Navigation.module.css';
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { cartCount, setIsCartOpen } = useCart();
   const { user, setIsAuthModalOpen, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const navLinks = [
     { path: '/', label: 'Home' },
@@ -31,6 +33,17 @@ const Navigation = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleSearchInputChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <nav className={styles.navbar}>
       <div className={styles.container}>
@@ -43,7 +56,7 @@ const Navigation = () => {
         </Link>
 
         {/* Search Bar */}
-        <div className={styles.searchBar}>
+        <form className={styles.searchBar} onSubmit={handleSearch}>
           <span className={styles.searchIcon}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" />
@@ -54,8 +67,10 @@ const Navigation = () => {
             type="text"
             placeholder="Search furniture..."
             className={styles.searchInput}
+            value={searchQuery}
+            onChange={handleSearchInputChange}
           />
-        </div>
+        </form>
 
         {/* Desktop Nav Links */}
         <div className={styles.navLinks}>
