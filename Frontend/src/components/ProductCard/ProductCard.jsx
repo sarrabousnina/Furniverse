@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useProductModal } from '../../context/ProductModalContext';
 import styles from './ProductCard.module.css';
 
 const ProductCard = ({ product, matchScore = null, matchReasons = [] }) => {
-  const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { openProductModal } = useProductModal();
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const handleCardClick = () => {
-    navigate(`/product/${product.id}`);
+    openProductModal(product);
   };
 
   const handleAddToCart = (e) => {

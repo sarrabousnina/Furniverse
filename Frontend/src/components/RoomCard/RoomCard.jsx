@@ -14,6 +14,13 @@ const RoomCard = ({ room, onEdit, onDelete }) => {
 
   return (
     <div className={styles.card} onClick={() => onEdit(room)}>
+      {/* Room Image */}
+      {room.image && (
+        <div className={styles.cardImage}>
+          <img src={room.image} alt={room.name} className={styles.roomImage} />
+        </div>
+      )}
+
       <div className={styles.cardHeader}>
         <div>
           <h3 className={styles.cardTitle}>{room.name}</h3>

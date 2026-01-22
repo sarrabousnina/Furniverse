@@ -30,6 +30,26 @@
   opacity: 1;
 }
 
+.cardImage {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  position: relative;
+}
+
+.roomImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.card:hover .roomImage {
+  transform: scale(1.05);
+}
+
 .cardHeader {
   display: flex;
   justify-content: space-between;

@@ -19,14 +19,54 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
     budgetMax: '',
     size: '',
     styles: [],
-    existingFurniture: ''
+    existingFurniture: '',
+    image: null
   });
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+      if (initialData.image) {
+        setImagePreview(initialData.image);
+      }
     }
   }, [initialData]);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setFormData(prev => ({
+          ...prev,
+          image: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setFormData(prev => ({
+      ...prev,
+      image: null
+    }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -99,6 +139,52 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
           placeholder="e.g., Living Room, Master Bedroom"
           required
         />
+      </div>
+
+      {/* Room Image */}
+      <div className={styles.formGroup}>
+        <label className={styles.label}>
+          <span className={styles.labelText}>
+            Room Image
+            <span className={styles.labelHint}>Optional - Upload a photo of your room</span>
+          </span>
+        </label>
+        <div className={styles.imageUpload}>
+          {imagePreview ? (
+            <div className={styles.imagePreview}>
+              <img src={imagePreview} alt="Room preview" className={styles.previewImage} />
+              <button
+                type="button"
+                className={styles.removeImageButton}
+                onClick={handleRemoveImage}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className={styles.uploadArea}>
+              <input
+                type="file"
+                id="roomImage"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className={styles.fileInput}
+              />
+              <label htmlFor="roomImage" className={styles.uploadLabel}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+                <span>Click to upload room image</span>
+                <span className={styles.uploadHint}>JPG, PNG or GIF (max 5MB)</span>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Budget Range */}

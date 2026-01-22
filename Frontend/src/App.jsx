@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { RoomsProvider } from './context/RoomsContext';
+import { ProductModalProvider, useProductModal } from './context/ProductModalContext';
 
 // Pages
 import HomePage from './pages/HomePage/HomePage';
@@ -15,12 +16,14 @@ import CheckoutPage from './pages/CheckoutPage/CheckoutPage';
 import Navigation from './components/Navigation/Navigation';
 import CartSidebar from './components/CartSidebar/CartSidebar';
 import AuthModal from './components/AuthModal/AuthModal';
+import ProductDetailModal from './components/ProductDetailModal/ProductDetailModal';
 import './index.css';
 
 // App content with routing and modals
 function AppContent() {
   const { isCartOpen } = useCart();
   const { isAuthModalOpen } = useAuth();
+  const { selectedProduct, isModalOpen, closeProductModal } = useProductModal();
 
   return (
     <>
@@ -37,6 +40,11 @@ function AppContent() {
       {/* Global Modals */}
       {isCartOpen && <CartSidebar />}
       {isAuthModalOpen && <AuthModal />}
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={closeProductModal}
+      />
     </>
   );
 }
@@ -47,7 +55,9 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <RoomsProvider>
-            <AppContent />
+            <ProductModalProvider>
+              <AppContent />
+            </ProductModalProvider>
           </RoomsProvider>
         </CartProvider>
       </AuthProvider>

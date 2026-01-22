@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useRooms } from '../../context/RoomsContext';
 import { PRODUCTS, CATEGORIES } from '../../data/products';
 import { getRecommendedProducts, getTrendingProducts } from '../../utils/recommendations';
@@ -21,29 +22,72 @@ const HomePage = () => {
   return (
     <div className={styles.page}>
       {/* Hero Section */}
-      <section className={styles.hero}>
+      <motion.section
+        className={styles.hero}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      >
         <div className={styles.heroBackground} />
         <div className={styles.heroContent}>
-          <div className={styles.heroBadge}>✨ AI-Powered Furniture Discovery</div>
-          <h1 className={styles.heroTitle}>
+          <motion.div
+            className={styles.heroBadge}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            ✨ AI-Powered Furniture Discovery
+          </motion.div>
+          <motion.h1
+            className={styles.heroTitle}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+          >
             Find Your Perfect <span>Dream Space</span>
-          </h1>
-          <p className={styles.heroSubtitle}>
+          </motion.h1>
+          <motion.p
+            className={styles.heroSubtitle}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+          >
             Tell us about your style, space, and budget. Our AI will curate personalized
             furniture recommendations that match your unique aesthetic.
-          </p>
-          <div className={styles.heroButtons}>
-            <Link to="/shop" className={styles.heroButtonPrimary}>
-              Shop All Furniture
-            </Link>
-            {rooms.length === 0 && (
-              <Link to="/profile" className={styles.heroButtonSecondary}>
-                Create Your Profile
+          </motion.p>
+          <motion.div
+            className={styles.heroButtons}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+          >
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link to="/shop" className={`${styles.heroButton} ${styles.heroButtonPrimary}`}>
+                <span className={styles.buttonText}>Shop All Furniture</span>
+                <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
               </Link>
+            </motion.div>
+            {rooms.length === 0 && (
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Link to="/profile" className={`${styles.heroButton} ${styles.heroButtonSecondary}`}>
+                  <span className={styles.buttonText}>Create Your Profile</span>
+                  <svg className={styles.buttonIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </Link>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Categories Section */}
       <section className={styles.container}>
