@@ -1,0 +1,190 @@
+.card {
+  background: var(--color-surface, #FFFFFF);
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+  box-shadow: 0 2px 12px var(--color-shadow, rgba(0, 0, 0, 0.08));
+  transition: all var(--transition-normal, 250ms ease);
+  cursor: pointer;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px var(--color-shadow-hover, rgba(0, 0, 0, 0.12));
+}
+
+.imageWrapper {
+  position: relative;
+  padding-top: 66.67%;
+  overflow: hidden;
+  background: var(--color-bg, #F5F3EF);
+}
+
+.image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow, 350ms ease);
+}
+
+.card:hover .image {
+  transform: scale(1.05);
+}
+
+.wishlistButton {
+  position: absolute;
+  top: var(--spacing-md, 16px);
+  right: var(--spacing-md, 16px);
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+  border: none;
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.card:hover .wishlistButton {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.wishlistButton:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+.wishlistButton svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--color-text-secondary, #6B6B6B);
+  fill: none;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.wishlistButton.active svg {
+  fill: #DC2626;
+  stroke: #DC2626;
+}
+
+.matchBadge {
+  position: absolute;
+  top: var(--spacing-md, 16px);
+  left: var(--spacing-md, 16px);
+  background: linear-gradient(135deg, var(--color-accent, #0D4D4D), #1A6B6B);
+  color: white;
+  padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(13, 77, 77, 0.3);
+}
+
+.content {
+  padding: var(--spacing-md, 16px);
+}
+
+.category {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6B6B6B);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+.name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1A1A1A);
+  margin-bottom: var(--spacing-sm, 8px);
+  line-height: 1.4;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+  color: #F59E0B;
+  font-size: 0.875rem;
+}
+
+.reviewCount {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary, #6B6B6B);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-md, 16px);
+}
+
+.price {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1A1A1A);
+}
+
+.addButton {
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  background: var(--color-accent, #0D4D4D);
+  color: white;
+  border-radius: var(--radius-md, 10px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+}
+
+.addButton:hover {
+  background: var(--color-accent-hover, #0A3A3A);
+  transform: translateY(-1px);
+}
+
+.addButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 640px) {
+  .content {
+    padding: var(--spacing-sm, 8px);
+  }
+
+  .name {
+    font-size: 0.9375rem;
+  }
+
+  .price {
+    font-size: 1rem;
+  }
+
+  .addButton {
+    padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+    font-size: 0.8125rem;
+  }
+}

@@ -1,0 +1,182 @@
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: 0 2px 12px var(--color-shadow);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-accent), #1A6B6B);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px var(--color-shadow-hover);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.cardSize {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.cardActions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.iconButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.iconButton:hover {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+}
+
+.iconButton.delete:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.cardSection {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+.cardSection:lastChild {
+  margin-bottom: 0;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.sectionLabel {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  min-width: fit-content;
+}
+
+.sectionValue {
+  color: var(--color-text-primary);
+}
+
+.budget {
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.styles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+}
+
+.styleBadge {
+  display: inline-block;
+  padding: 4px var(--spacing-sm);
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+}
+
+.furniture {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.furnitureIcon {
+  margin-right: var(--spacing-xs);
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-2xl);
+}
+
+.emptyStateIcon {
+  fontSize: '3rem';
+  marginBottom: var(--spacing-md);
+  opacity: 0.3;
+}
+
+.emptyStateTitle {
+  fontSize: '1.125rem';
+  fontWeight: 600;
+  color: var(--color-text-primary);
+  marginBottom: var(--spacing-sm);
+}
+
+.emptyStateText {
+  fontSize: '0.875rem';
+  color: var(--color-text-secondary);
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .card {
+    padding: var(--spacing-md);
+  }
+
+  .cardTitle {
+    font-size: 1rem;
+  }
+
+  .cardSection {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}
