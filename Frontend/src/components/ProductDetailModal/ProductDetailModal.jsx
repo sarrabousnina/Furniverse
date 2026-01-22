@@ -47,6 +47,69 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
     );
   };
 
+  const formatDimensions = (dimensions) => {
+    if (!dimensions) return null;
+
+    // Check for nested dimensions (e.g., nesting tables, storage sets)
+    const nestedKeys = Object.keys(dimensions).filter(key =>
+      typeof dimensions[key] === 'object' && !Array.isArray(dimensions[key])
+    );
+
+    if (nestedKeys.length > 0) {
+      return nestedKeys.map(key => {
+        const item = dimensions[key];
+        const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+        return (
+          <div key={key} className={styles.nestedDimension}>
+            <span className={styles.nestedLabel}>{label}:</span>
+            <span className={styles.nestedValues}>
+              {item.width && `${item.width}" W`}
+              {item.width && (item.height || item.depth) && ' × '}
+              {item.height && `${item.height}" H`}
+              {(item.width || item.height) && item.depth && ' × '}
+              {item.depth && `${item.depth}" D`}
+              {item.diameter && !item.width && `${item.diameter}" diameter`}
+              {item.diameter && (item.height || item.depth) && ' × '}
+              {item.minHeight && item.maxHeight && `${item.minHeight}"-${item.maxHeight}" H`}
+            </span>
+          </div>
+        );
+      });
+    }
+
+    // Handle adjustable height items
+    if (dimensions.minHeight && dimensions.maxHeight) {
+      return (
+        <>
+          {dimensions.width && <span className={styles.dimensionItem}><strong>Width:</strong> {dimensions.width}"</span>}
+          {dimensions.depth && <span className={styles.dimensionItem}><strong>Depth:</strong> {dimensions.depth}"</span>}
+          {dimensions.seatHeight && <span className={styles.dimensionItem}><strong>Seat Height:</strong> {dimensions.seatHeight}"</span>}
+          <span className={styles.dimensionItem}><strong>Height Range:</strong> {dimensions.minHeight}"-{dimensions.maxHeight}"</span>
+        </>
+      );
+    }
+
+    // Handle round items (tables, lamps)
+    if (dimensions.diameter) {
+      return (
+        <>
+          <span className={styles.dimensionItem}><strong>Diameter:</strong> {dimensions.diameter}"</span>
+          {dimensions.height && <span className={styles.dimensionItem}><strong>Height:</strong> {dimensions.height}"</span>}
+        </>
+      );
+    }
+
+    // Handle standard dimensions (width, height, depth, seatHeight)
+    return (
+      <>
+        {dimensions.width && <span className={styles.dimensionItem}><strong>Width:</strong> {dimensions.width}"</span>}
+        {dimensions.height && <span className={styles.dimensionItem}><strong>Height:</strong> {dimensions.height}"</span>}
+        {dimensions.depth && <span className={styles.dimensionItem}><strong>Depth:</strong> {dimensions.depth}"</span>}
+        {dimensions.seatHeight && <span className={styles.dimensionItem}><strong>Seat Height:</strong> {dimensions.seatHeight}"</span>}
+      </>
+    );
+  };
+
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -120,6 +183,15 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
                         {feature}
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {product.dimensions && (
+                <div className={styles.dimensions}>
+                  <h3 className={styles.dimensionsTitle}>Dimensions</h3>
+                  <div className={styles.dimensionsList}>
+                    {formatDimensions(product.dimensions)}
                   </div>
                 </div>
               )}

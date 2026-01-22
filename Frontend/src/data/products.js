@@ -18,6 +18,12 @@ export const PRODUCTS = [
     styles: ['Modern', 'Glam'],
     colors: ['emerald', 'navy', 'gray'],
     tags: ['velvet', 'luxury', 'statement-piece'],
+    dimensions: {
+      width: 84,
+      height: 34,
+      depth: 36,
+      seatHeight: 18
+    },
     inStock: true,
     trending: true,
   },
@@ -37,6 +43,12 @@ export const PRODUCTS = [
     styles: ['Scandinavian', 'Minimalist'],
     colors: ['gray', 'beige'],
     tags: ['modular', 'versatile', 'family-friendly'],
+    dimensions: {
+      width: 110,
+      height: 33,
+      depth: 85,
+      seatHeight: 17
+    },
     inStock: true,
     trending: true,
   },
@@ -56,6 +68,12 @@ export const PRODUCTS = [
     styles: ['Mid-Century', 'Rustic'],
     colors: ['walnut', 'cream'],
     tags: ['compact', 'retro', 'apartment-friendly'],
+    dimensions: {
+      width: 60,
+      height: 32,
+      depth: 34,
+      seatHeight: 17
+    },
     inStock: true,
   },
 
@@ -76,6 +94,11 @@ export const PRODUCTS = [
     styles: ['Modern', 'Glam'],
     colors: ['white', 'gold'],
     tags: ['luxury', 'statement', 'marble'],
+    dimensions: {
+      width: 48,
+      height: 18,
+      depth: 24
+    },
     inStock: true,
     trending: true,
   },
@@ -95,6 +118,11 @@ export const PRODUCTS = [
     styles: ['Industrial', 'Rustic'],
     colors: ['brown', 'black'],
     tags: ['rustic', 'large', 'dining'],
+    dimensions: {
+      width: 72,
+      height: 30,
+      depth: 36
+    },
     inStock: true,
   },
   {
@@ -113,6 +141,11 @@ export const PRODUCTS = [
     styles: ['Minimalist', 'Modern'],
     colors: ['black'],
     tags: ['compact', 'storage', 'versatile'],
+    dimensions: {
+      width: 20,
+      height: 22,
+      depth: 20
+    },
     inStock: true,
   },
 
@@ -133,6 +166,10 @@ export const PRODUCTS = [
     styles: ['Modern', 'Minimalist'],
     colors: ['brass', 'chrome'],
     tags: ['adjustable', 'led', 'modern'],
+    dimensions: {
+      height: 68,
+      diameter: 12
+    },
     inStock: true,
     trending: true,
   },
@@ -152,6 +189,10 @@ export const PRODUCTS = [
     styles: ['Bohemian', 'Rustic'],
     colors: ['terracotta', 'cream'],
     tags: ['boho', 'set', 'warm-lighting'],
+    dimensions: {
+      height: 24,
+      diameter: 14
+    },
     inStock: true,
   },
   {
@@ -170,6 +211,11 @@ export const PRODUCTS = [
     styles: ['Mid-Century', 'Industrial'],
     colors: ['brass'],
     tags: ['wall-mount', 'vintage', 'reading'],
+    dimensions: {
+      height: 12,
+      width: 8,
+      depth: 14
+    },
     inStock: true,
   },
 
@@ -190,6 +236,12 @@ export const PRODUCTS = [
     styles: ['Mid-Century', 'Modern'],
     colors: ['walnut', 'black'],
     tags: ['iconic', 'luxury', 'comfortable'],
+    dimensions: {
+      width: 33,
+      height: 32,
+      depth: 32,
+      seatHeight: 17
+    },
     inStock: true,
     trending: true,
   },
@@ -209,6 +261,12 @@ export const PRODUCTS = [
     styles: ['Glam', 'Modern'],
     colors: ['navy', 'emerald', 'pink'],
     tags: ['accent', 'velvet', 'luxury'],
+    dimensions: {
+      width: 28,
+      height: 34,
+      depth: 30,
+      seatHeight: 18
+    },
     inStock: true,
   },
   {
@@ -227,6 +285,12 @@ export const PRODUCTS = [
     styles: ['Scandinavian', 'Minimalist'],
     colors: ['natural', 'white'],
     tags: ['dining', 'comfortable', 'stackable'],
+    dimensions: {
+      width: 22,
+      height: 32,
+      depth: 22,
+      seatHeight: 18
+    },
     inStock: true,
   },
   {
@@ -245,6 +309,12 @@ export const PRODUCTS = [
     styles: ['Industrial', 'Mid-Century'],
     colors: ['brown', 'cognac'],
     tags: ['leather', 'classic', 'comfort'],
+    dimensions: {
+      width: 32,
+      height: 34,
+      depth: 34,
+      seatHeight: 17
+    },
     inStock: true,
   },
 
@@ -265,6 +335,12 @@ export const PRODUCTS = [
     styles: ['Mid-Century', 'Industrial'],
     colors: ['brown', 'black', 'burgundy'],
     tags: ['classic', 'leather', 'tufted', 'statement-piece'],
+    dimensions: {
+      width: 88,
+      height: 35,
+      depth: 38,
+      seatHeight: 18
+    },
     inStock: true,
     trending: true,
   },
@@ -284,6 +360,12 @@ export const PRODUCTS = [
     styles: ['Coastal', 'Transitional'],
     colors: ['white', 'sand', 'blue'],
     tags: ['sleeper', 'guest-bed', 'linen', 'versatile'],
+    dimensions: {
+      width: 78,
+      height: 35,
+      depth: 40,
+      seatHeight: 17
+    },
     inStock: true,
   },
   {
@@ -302,6 +384,12 @@ export const PRODUCTS = [
     styles: ['Transitional', 'Traditional'],
     colors: ['gray', 'navy', 'beige'],
     tags: ['family-friendly', 'durable', 'classic'],
+    dimensions: {
+      width: 92,
+      height: 34,
+      depth: 38,
+      seatHeight: 18
+    },
     inStock: true,
   },
 
@@ -322,6 +410,10 @@ export const PRODUCTS = [
     styles: ['Modern', 'Minimalist'],
     colors: ['clear', 'chrome'],
     tags: ['glass', 'round', 'modern', 'space-saving'],
+    dimensions: {
+      diameter: 48,
+      height: 30
+    },
     inStock: true,
   },
   {
@@ -340,6 +432,11 @@ export const PRODUCTS = [
     styles: ['Rustic', 'Industrial'],
     colors: ['brown', 'black'],
     tags: ['console', 'entryway', 'reclaimed-wood'],
+    dimensions: {
+      width: 60,
+      height: 32,
+      depth: 16
+    },
     inStock: true,
   },
   {
@@ -358,6 +455,18 @@ export const PRODUCTS = [
     styles: ['Glam', 'Modern'],
     colors: ['white', 'gold'],
     tags: ['nesting', 'versatile', 'marble', 'set'],
+    dimensions: {
+      largeTable: {
+        width: 32,
+        height: 18,
+        depth: 24
+      },
+      smallTable: {
+        width: 24,
+        height: 16,
+        depth: 18
+      }
+    },
     inStock: true,
     trending: true,
   },
@@ -379,6 +488,10 @@ export const PRODUCTS = [
     styles: ['Glam', 'Modern'],
     colors: ['chrome', 'clear'],
     tags: ['chandelier', 'crystal', 'statement', 'luxury'],
+    dimensions: {
+      height: 28,
+      diameter: 24
+    },
     inStock: true,
   },
   {
@@ -397,6 +510,10 @@ export const PRODUCTS = [
     styles: ['Industrial', 'Rustic'],
     colors: ['bronze', 'black', 'brass'],
     tags: ['pendant', 'edison', 'vintage', 'industrial'],
+    dimensions: {
+      height: 14,
+      diameter: 10
+    },
     inStock: true,
   },
   {
@@ -415,6 +532,10 @@ export const PRODUCTS = [
     styles: ['Modern', 'Minimalist'],
     colors: ['brass', 'black', 'chrome'],
     tags: ['arc-lamp', 'adjustable', 'modern', 'reading'],
+    dimensions: {
+      height: 64,
+      diameter: 16
+    },
     inStock: true,
   },
 
@@ -435,6 +556,12 @@ export const PRODUCTS = [
     styles: ['Traditional', 'Transitional'],
     colors: ['gray', 'navy', 'cream'],
     tags: ['wingback', 'classic', 'accent', 'comfortable'],
+    dimensions: {
+      width: 30,
+      height: 42,
+      depth: 36,
+      seatHeight: 19
+    },
     inStock: true,
   },
   {
@@ -453,6 +580,12 @@ export const PRODUCTS = [
     styles: ['Traditional', 'Rustic'],
     colors: ['cream', 'light-blue', 'gray'],
     tags: ['bergere', 'french', 'cane', 'elegant'],
+    dimensions: {
+      width: 28,
+      height: 36,
+      depth: 30,
+      seatHeight: 18
+    },
     inStock: true,
   },
   {
@@ -471,6 +604,12 @@ export const PRODUCTS = [
     styles: ['Modern', 'Transitional'],
     colors: ['gray', 'navy', 'taupe'],
     tags: ['swivel', 'barrel', 'curved', 'versatile'],
+    dimensions: {
+      width: 30,
+      height: 33,
+      depth: 32,
+      seatHeight: 18
+    },
     inStock: true,
     trending: true,
   },
@@ -490,6 +629,12 @@ export const PRODUCTS = [
     styles: ['Bohemian', 'Coastal'],
     colors: ['natural', 'white'],
     tags: ['rattan', 'peacock', 'boho', 'statement'],
+    dimensions: {
+      width: 36,
+      height: 54,
+      depth: 32,
+      seatHeight: 17
+    },
     inStock: true,
   },
 
@@ -510,6 +655,11 @@ export const PRODUCTS = [
     styles: ['Modern', 'Transitional'],
     colors: ['gray', 'navy', 'beige'],
     tags: ['platform', 'upholstered', 'modern', 'queen'],
+    dimensions: {
+      width: 84,
+      height: 52,
+      depth: 90
+    },
     inStock: true,
     trending: true,
   },
@@ -529,6 +679,11 @@ export const PRODUCTS = [
     styles: ['Mid-Century', 'Scandinavian'],
     colors: ['walnut', 'natural'],
     tags: ['mid-century', 'walnut', 'solid-wood'],
+    dimensions: {
+      width: 84,
+      height: 48,
+      depth: 90
+    },
     inStock: true,
   },
   {
@@ -547,6 +702,11 @@ export const PRODUCTS = [
     styles: ['Industrial', 'Traditional'],
     colors: ['black', 'bronze', 'white'],
     tags: ['canopy', 'iron', 'vintage', 'romantic'],
+    dimensions: {
+      width: 84,
+      height: 72,
+      depth: 90
+    },
     inStock: true,
   },
 
@@ -567,6 +727,11 @@ export const PRODUCTS = [
     styles: ['Traditional', 'Transitional'],
     colors: ['white', 'espresso', 'gray'],
     tags: ['bureau', 'writing-desk', 'storage', 'compact'],
+    dimensions: {
+      width: 48,
+      height: 42,
+      depth: 24
+    },
     inStock: true,
   },
   {
@@ -585,6 +750,12 @@ export const PRODUCTS = [
     styles: ['Modern', 'Minimalist'],
     colors: ['black', 'white', 'gray'],
     tags: ['standing-desk', 'adjustable', 'ergonomic', 'converter'],
+    dimensions: {
+      width: 48,
+      minHeight: 6,
+      maxHeight: 20,
+      depth: 30
+    },
     inStock: true,
     trending: true,
   },
@@ -604,6 +775,11 @@ export const PRODUCTS = [
     styles: ['Modern', 'Minimalist'],
     colors: ['white', 'walnut', 'black'],
     tags: ['wall-mounted', 'space-saving', 'compact', 'modern'],
+    dimensions: {
+      width: 40,
+      height: 20,
+      depth: 20
+    },
     inStock: true,
   },
 
@@ -624,6 +800,11 @@ export const PRODUCTS = [
     styles: ['Mid-Century', 'Scandinavian'],
     colors: ['walnut', 'white', 'teal'],
     tags: ['credenza', 'storage', 'mid-century', 'media-console'],
+    dimensions: {
+      width: 72,
+      height: 34,
+      depth: 18
+    },
     inStock: true,
     trending: true,
   },
@@ -643,6 +824,11 @@ export const PRODUCTS = [
     styles: ['Industrial', 'Rustic'],
     colors: ['black', 'bronze', 'gray'],
     tags: ['bookcase', 'industrial', 'open-shelving', 'metal'],
+    dimensions: {
+      width: 36,
+      height: 72,
+      depth: 12
+    },
     inStock: true,
   },
   {
@@ -661,6 +847,23 @@ export const PRODUCTS = [
     styles: ['Bohemian', 'Coastal'],
     colors: ['natural', 'white-wash'],
     tags: ['baskets', 'rattan', 'organizing', 'set'],
+    dimensions: {
+      large: {
+        width: 16,
+        height: 12,
+        depth: 16
+      },
+      medium: {
+        width: 14,
+        height: 10,
+        depth: 14
+      },
+      small: {
+        width: 12,
+        height: 8,
+        depth: 12
+      }
+    },
     inStock: true,
   },
 
@@ -681,6 +884,11 @@ export const PRODUCTS = [
     styles: ['Modern', 'Glam'],
     colors: ['gold', 'black', 'white'],
     tags: ['mirror', 'full-length', 'arched', 'statement'],
+    dimensions: {
+      width: 30,
+      height: 72,
+      depth: 1
+    },
     inStock: true,
     trending: true,
   },
@@ -700,6 +908,20 @@ export const PRODUCTS = [
     styles: ['Modern', 'Minimalist'],
     colors: ['white', 'terracotta', 'black'],
     tags: ['vases', 'ceramic', 'set', 'modern'],
+    dimensions: {
+      large: {
+        height: 14,
+        diameter: 5
+      },
+      medium: {
+        height: 10,
+        diameter: 4
+      },
+      small: {
+        height: 7,
+        diameter: 3
+      }
+    },
     inStock: true,
   },
   {
@@ -718,6 +940,10 @@ export const PRODUCTS = [
     styles: ['Bohemian', 'Coastal', 'Rustic'],
     colors: ['natural', 'gray', 'cream'],
     tags: ['rug', 'jute', 'natural', 'handwoven'],
+    dimensions: {
+      width: 96,
+      height: 64
+    },
     inStock: true,
   },
   {
@@ -736,6 +962,11 @@ export const PRODUCTS = [
     styles: ['Modern', 'Glam'],
     colors: ['gold', 'black', 'white'],
     tags: ['wall-art', 'abstract', 'canvas', 'gold'],
+    dimensions: {
+      width: 36,
+      height: 48,
+      depth: 1
+    },
     inStock: true,
   },
 
@@ -756,6 +987,11 @@ export const PRODUCTS = [
     styles: ['Transitional', 'Modern'],
     colors: ['gray', 'navy', 'cream'],
     tags: ['ottoman', 'storage', 'versatile', 'tufted'],
+    dimensions: {
+      width: 48,
+      height: 18,
+      depth: 30
+    },
     inStock: true,
   },
   {
@@ -774,6 +1010,13 @@ export const PRODUCTS = [
     styles: ['Modern', 'Industrial'],
     colors: ['black', 'gray', 'white'],
     tags: ['bar-stool', 'adjustable', 'swivel', 'kitchen'],
+    dimensions: {
+      width: 18,
+      minHeight: 24,
+      maxHeight: 32,
+      depth: 18,
+      seatHeight: 24
+    },
     inStock: true,
   },
   {
@@ -792,6 +1035,10 @@ export const PRODUCTS = [
     styles: ['Modern', 'Minimalist'],
     colors: ['brass', 'chrome', 'black'],
     tags: ['pendant', 'cluster', 'glass', 'modern'],
+    dimensions: {
+      height: 18,
+      diameter: 10
+    },
     inStock: true,
     trending: true,
   },
@@ -811,6 +1058,11 @@ export const PRODUCTS = [
     styles: ['Traditional', 'Transitional'],
     colors: ['white', 'black', 'natural'],
     tags: ['folding', 'game-table', 'versatile', 'compact'],
+    dimensions: {
+      width: 36,
+      height: 29,
+      depth: 36
+    },
     inStock: true,
   },
 ];

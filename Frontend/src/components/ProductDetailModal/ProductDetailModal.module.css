@@ -234,6 +234,62 @@
   font-weight: 700;
 }
 
+.dimensions {
+  margin-bottom: var(--spacing-xl, 32px);
+}
+
+.dimensionsTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1A1A1A);
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.dimensionsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md, 16px);
+}
+
+.dimensionItem {
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  background: var(--color-bg, #F5F3EF);
+  border-radius: var(--radius-md, 10px);
+  font-size: 0.9375rem;
+  color: var(--color-text-primary, #1A1A1A);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+}
+
+.dimensionItem strong {
+  color: var(--color-accent, #0D4D4D);
+  font-weight: 600;
+}
+
+.nestedDimension {
+  padding: var(--spacing-md, 16px);
+  background: var(--color-bg, #F5F3EF);
+  border-radius: var(--radius-md, 10px);
+  margin-bottom: var(--spacing-sm, 8px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 4px);
+}
+
+.nestedLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-accent, #0D4D4D);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nestedValues {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary, #1A1A1A);
+}
+
 .actions {
   display: flex;
   flex-direction: column;
