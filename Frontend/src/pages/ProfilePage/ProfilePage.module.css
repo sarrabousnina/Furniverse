@@ -94,6 +94,12 @@
   transition: all var(--transition-normal, 250ms ease);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+}
+
+.roomCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px var(--color-shadow, rgba(0, 0, 0, 0.12));
 }
 
 .roomCard::before {
@@ -191,6 +197,10 @@
 .detailValue {
   color: var(--color-text-primary, #1A1A1A);
   font-weight: 600;
+}
+
+.productsValue {
+  color: var(--color-accent, #0D4D4D);
 }
 
 .budgetValue {

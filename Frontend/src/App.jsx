@@ -11,6 +11,7 @@ import ShopPage from './pages/ShopPage/ShopPage';
 import ProductDetailPage from './pages/ProductDetailPage/ProductDetailPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import CheckoutPage from './pages/CheckoutPage/CheckoutPage';
+import RoomDetailPage from './pages/RoomDetailPage/RoomDetailPage';
 
 // Components
 import Navigation from './components/Navigation/Navigation';
@@ -33,6 +34,7 @@ function AppContent() {
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/room/:roomId" element={<RoomDetailPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

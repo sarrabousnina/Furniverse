@@ -25,6 +25,7 @@ export const RoomsProvider = ({ children }) => {
       ...roomData,
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
+      products: [], // Array to store assigned product IDs
     };
     setRooms(prev => [...prev, newRoom]);
     return newRoom;
@@ -46,6 +47,46 @@ export const RoomsProvider = ({ children }) => {
     return rooms.length > 0 ? rooms[0] : null;
   };
 
+  const getRoomById = (roomId) => {
+    return rooms.find(room => room.id === roomId) || null;
+  };
+
+  const addProductToRoom = (roomId, productId) => {
+    setRooms(prev =>
+      prev.map(room => {
+        if (room.id === roomId) {
+          if (room.products && room.products.includes(productId)) {
+            return room;
+          }
+          return {
+            ...room,
+            products: [...(room.products || []), productId]
+          };
+        }
+        return room;
+      })
+    );
+  };
+
+  const removeProductFromRoom = (roomId, productId) => {
+    setRooms(prev =>
+      prev.map(room => {
+        if (room.id === roomId) {
+          return {
+            ...room,
+            products: (room.products || []).filter(id => id !== productId)
+          };
+        }
+        return room;
+      })
+    );
+  };
+
+  const isProductInRoom = (roomId, productId) => {
+    const room = rooms.find(r => r.id === roomId);
+    return room?.products?.includes(productId) || false;
+  };
+
   return (
     <RoomsContext.Provider
       value={{
@@ -54,6 +95,10 @@ export const RoomsProvider = ({ children }) => {
         updateRoom,
         deleteRoom,
         getActiveRoom,
+        getRoomById,
+        addProductToRoom,
+        removeProductFromRoom,
+        isProductInRoom,
       }}
     >
       {children}

@@ -75,13 +75,20 @@ const ProfilePage = () => {
         {rooms.length > 0 && (
           <div className={styles.roomsGrid}>
             {rooms.map(room => (
-              <div key={room.id} className={styles.roomCard}>
+              <div 
+                key={room.id} 
+                className={styles.roomCard}
+                onClick={() => navigate(`/room/${room.id}`)}
+              >
                 <div className={styles.roomHeader}>
                   <h3 className={styles.roomTitle}>{room.name}</h3>
                   <div className={styles.roomActions}>
                     <button
                       className={styles.iconButton}
-                      onClick={() => handleEditRoom(room)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditRoom(room);
+                      }}
                       aria-label="Edit room"
                     >
                       <svg viewBox="0 0 24 24" fill="none" strokeWidth="2">
@@ -91,7 +98,10 @@ const ProfilePage = () => {
                     </button>
                     <button
                       className={`${styles.iconButton} ${styles.delete}`}
-                      onClick={() => handleDeleteRoom(room.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteRoom(room.id);
+                      }}
                       aria-label="Delete room"
                     >
                       <svg viewBox="0 0 24 24" fill="none" strokeWidth="2">
@@ -103,6 +113,17 @@ const ProfilePage = () => {
                 </div>
 
                 <div className={styles.roomDetails}>
+                  {/* Products Count */}
+                  <div className={styles.detailRow}>
+                    <svg className={styles.detailIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <span className={styles.detailLabel}>Furniture:</span>
+                    <span className={`${styles.detailValue} ${styles.productsValue}`}>
+                      {room.products?.length || 0} items
+                    </span>
+                  </div>
+
                   {/* Budget */}
                   <div className={styles.detailRow}>
                     <svg className={styles.detailIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

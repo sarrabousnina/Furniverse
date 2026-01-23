@@ -8,10 +8,11 @@ import styles from './ProductDetailModal.module.css';
 
 const ProductDetailModal = ({ product, isOpen, onClose }) => {
   const { addToCart } = useCart();
-  const { getActiveRoom } = useRooms();
+  const { rooms, getActiveRoom, addProductToRoom, removeProductFromRoom, isProductInRoom } = useRooms();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [showRoomDropdown, setShowRoomDropdown] = useState(false);
 
   const activeRoom = getActiveRoom();
 
@@ -234,6 +235,58 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
                   </svg>
                 </button>
               </div>
+
+              {/* Add to Room Section */}
+              {rooms.length > 0 && (
+                <div className={styles.addToRoomSection}>
+                  <div className={styles.addToRoomHeader}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    <span>Add to Room</span>
+                  </div>
+                  <div className={styles.roomDropdownWrapper}>
+                    <button 
+                      className={styles.roomDropdownToggle}
+                      onClick={() => setShowRoomDropdown(!showRoomDropdown)}
+                    >
+                      <span>Select a room</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={showRoomDropdown ? styles.rotated : ''}>
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+                    {showRoomDropdown && (
+                      <div className={styles.roomDropdown}>
+                        {rooms.map(room => {
+                          const isInRoom = isProductInRoom(room.id, product.id);
+                          return (
+                            <button
+                              key={room.id}
+                              className={`${styles.roomOption} ${isInRoom ? styles.roomOptionActive : ''}`}
+                              onClick={() => {
+                                if (isInRoom) {
+                                  removeProductFromRoom(room.id, product.id);
+                                } else {
+                                  addProductToRoom(room.id, product.id);
+                                }
+                              }}
+                            >
+                              <span className={styles.roomOptionName}>{room.name}</span>
+                              <span className={styles.roomOptionType}>{room.roomType}</span>
+                              {isInRoom && (
+                                <svg className={styles.checkIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

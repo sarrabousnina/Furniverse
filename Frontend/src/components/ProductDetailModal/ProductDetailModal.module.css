@@ -393,6 +393,135 @@
   stroke: #E74C3C;
 }
 
+/* Add to Room Section */
+.addToRoomSection {
+  margin-top: var(--spacing-lg, 24px);
+  padding-top: var(--spacing-lg, 24px);
+  border-top: 1px solid var(--color-border, #E5E5E5);
+}
+
+.addToRoomHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  margin-bottom: var(--spacing-md, 16px);
+  font-weight: 600;
+  color: var(--color-text-primary, #1A1A1A);
+}
+
+.addToRoomHeader svg {
+  width: 20px;
+  height: 20px;
+}
+
+.roomDropdownWrapper {
+  position: relative;
+}
+
+.roomDropdownToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md, 16px);
+  background: var(--color-bg, #F5F3EF);
+  border: 1px solid var(--color-border, #E5E5E5);
+  border-radius: var(--radius-md, 10px);
+  font-size: 0.95rem;
+  color: var(--color-text-secondary, #6B6B6B);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.roomDropdownToggle:hover {
+  border-color: var(--color-accent, #0D4D4D);
+}
+
+.roomDropdownToggle svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+
+.roomDropdownToggle svg.rotated {
+  transform: rotate(180deg);
+}
+
+.roomDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E5E5);
+  border-radius: var(--radius-md, 10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+  max-height: 240px;
+  overflow-y: auto;
+  animation: dropdownSlide 0.2s ease;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.roomOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-md, 16px);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.roomOption:hover {
+  background: var(--color-bg, #F5F3EF);
+}
+
+.roomOption:not(:last-child) {
+  border-bottom: 1px solid var(--color-border, #E5E5E5);
+}
+
+.roomOptionActive {
+  background: rgba(13, 77, 77, 0.08);
+}
+
+.roomOptionActive:hover {
+  background: rgba(13, 77, 77, 0.12);
+}
+
+.roomOptionName {
+  flex: 1;
+  font-weight: 500;
+  color: var(--color-text-primary, #1A1A1A);
+}
+
+.roomOptionType {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #6B6B6B);
+  padding: 4px 10px;
+  background: var(--color-bg, #F5F3EF);
+  border-radius: 20px;
+}
+
+.checkIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-accent, #0D4D4D);
+}
+
 .recommendationsSection {
   margin-top: var(--spacing-2xl, 48px);
   padding-top: var(--spacing-2xl, 48px);
