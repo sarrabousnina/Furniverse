@@ -1,6 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination, Mousewheel, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
 import { useRooms } from '../../context/RoomsContext';
 import { PRODUCTS, CATEGORIES } from '../../data/products';
 import { getRecommendedProducts, getTrendingProducts } from '../../utils/recommendations';
@@ -97,20 +102,59 @@ const HomePage = () => {
             Browse our curated collections
           </p>
         </div>
-        <div className={styles.categories}>
-          {CATEGORIES.filter(cat => cat.id !== 'all').map(category => (
-            <Link
-              key={category.id}
-              to={`/shop?category=${category.id}`}
-              className={styles.categoryCard}
-            >
-              <div className={styles.categoryIcon}>{category.icon}</div>
-              <div className={styles.categoryName}>{category.name}</div>
-              <div className={styles.categoryCount}>
-                {PRODUCTS.filter(p => p.category === category.name).length} items
-              </div>
-            </Link>
-          ))}
+        <div className={styles.categoriesWrapper}>
+          <Swiper
+            modules={[Pagination, Mousewheel, Navigation]}
+            spaceBetween={24}
+            slidesPerView={2}
+            grabCursor={true}
+            speed={400}
+            loop={false}
+            initialSlide={Math.floor(CATEGORIES.filter(cat => cat.id !== 'all').length / 2)}
+            centeredSlides={true}
+            slideToClickedSlide={true}
+            resistanceRatio={0.85}
+            navigation={true}
+            mousewheel={{
+              forceToAxis: true,
+              sensitivity: 1,
+              releaseOnEdges: false,
+            }}
+            breakpoints={{
+              640: {
+                slidesPerView: 3,
+                spaceBetween: 20,
+              },
+              1024: {
+                slidesPerView: 4,
+                spaceBetween: 24,
+              },
+              1280: {
+                slidesPerView: 5,
+                spaceBetween: 24,
+              },
+            }}
+            pagination={{ 
+              clickable: true,
+              dynamicBullets: true,
+            }}
+            className={styles.categoriesSwiper}
+          >
+            {CATEGORIES.filter(cat => cat.id !== 'all').map(category => (
+              <SwiperSlide key={category.id}>
+                <Link
+                  to={`/shop?category=${category.id}`}
+                  className={styles.categoryCard}
+                >
+                  <div className={styles.categoryIcon}>{category.icon}</div>
+                  <div className={styles.categoryName}>{category.name}</div>
+                  <div className={styles.categoryCount}>
+                    {PRODUCTS.filter(p => p.category === category.name).length} items
+                  </div>
+                </Link>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
       </section>
 

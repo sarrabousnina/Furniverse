@@ -68,9 +68,6 @@ const ProfilePage = () => {
               Tell us about your space, style preferences, and budget. We'll use this information
               to provide personalized furniture recommendations throughout the store.
             </p>
-            <button className={styles.addButton} onClick={handleAddRoom}>
-              <span>+</span> Create Room Profile
-            </button>
           </div>
         )}
 
