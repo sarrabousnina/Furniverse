@@ -146,7 +146,13 @@ const HomePage = () => {
                   to={`/shop?category=${category.id}`}
                   className={styles.categoryCard}
                 >
-                  <div className={styles.categoryIcon}>{category.icon}</div>
+                  <div className={styles.categoryIcon}>
+                    {category.icon.startsWith('http') || category.icon.startsWith('/') ? (
+                      <img src={category.icon} alt={category.name} />
+                    ) : (
+                      category.icon
+                    )}
+                  </div>
                   <div className={styles.categoryName}>{category.name}</div>
                   <div className={styles.categoryCount}>
                     {PRODUCTS.filter(p => p.category === category.name).length} items

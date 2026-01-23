@@ -1072,7 +1072,7 @@ export const CATEGORIES = [
   { id: 'sofas', name: 'Sofas', icon: '🛋️' },
   { id: 'tables', name: 'Tables', icon: '🪵' },
   { id: 'lamps', name: 'Lamps', icon: '💡' },
-  { id: 'chairs', name: 'Chairs', icon: '🪑' },
+  { id: 'chairs', name: 'Chairs', icon: '/images/categories/chair.png' },
   { id: 'bed-frames', name: 'Bed Frames', icon: '🛏️' },
   { id: 'desks', name: 'Desks', icon: '🖥️' },
   { id: 'storage', name: 'Storage', icon: '🗄️' },
