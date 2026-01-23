@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
 import { useProductModal } from '../../context/ProductModalContext';
+import { trackProductClick } from '../../utils/userTracking';
 import styles from './ProductCard.module.css';
 
 const ProductCard = ({ product, matchScore = null, matchReasons = [] }) => {
@@ -9,6 +10,7 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [] }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const handleCardClick = () => {
+    trackProductClick(product);
     openProductModal(product);
   };
 
