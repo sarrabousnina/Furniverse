@@ -270,9 +270,9 @@ const RoomDetailPage = () => {
                 grabCursor={true}
                 pagination={{ clickable: true, dynamicBullets: true }}
                 breakpoints={{
-                  640: { slidesPerView: 2, spaceBetween: 20 },
-                  1024: { slidesPerView: 3, spaceBetween: 24 },
-                  1400: { slidesPerView: 4, spaceBetween: 24 },
+                640: { slidesPerView: 2, spaceBetween: 20 },
+                1024: { slidesPerView: 3, spaceBetween: 24 },
+                1400: { slidesPerView: 4, spaceBetween: 24 },
                 }}
                 className={styles.productSwiper}
               >

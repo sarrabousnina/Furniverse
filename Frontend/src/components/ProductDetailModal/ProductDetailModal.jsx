@@ -155,88 +155,22 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
               )}
             </div>
 
+
             {/* Details */}
+            
             <div className={styles.details}>
-              <div className={styles.category}>{product.category}</div>
-              <h1 className={styles.title}>{product.name}</h1>
-
-              <div className={styles.rating}>
-                <div className={styles.stars}>{renderStars(product.rating)}</div>
-                <span className={styles.ratingText}>
-                  {product.rating} ({product.reviewCount} reviews)
-                </span>
-              </div>
-
-              <div className={styles.price}>
-                ${product.price.toLocaleString()}
-              </div>
-
-              <p className={styles.description}>
-                {product.description}
-              </p>
-
-              {product.features && (
-                <div className={styles.features}>
-                  <h3 className={styles.featuresTitle}>Features</h3>
-                  <div className={styles.featuresList}>
-                    {product.features.map((feature, idx) => (
-                      <div key={idx} className={styles.featureItem}>
-                        {feature}
-                      </div>
-                    ))}
-                  </div>
+              {/* Modern, premium grouping: Add to Room at top, then title/price, then details */}
+              <div className={styles.productHeaderGroup}>
+                <div className={styles.category}>{product.category}</div>
+                <h1 className={styles.title}>{product.name}</h1>
+                <div className={styles.price}>${product.price.toLocaleString()}</div>
+                <div className={styles.rating}>
+                  <div className={styles.stars}>{renderStars(product.rating)}</div>
+                  <span className={styles.ratingText}>
+                    {product.rating} ({product.reviewCount} reviews)
+                  </span>
                 </div>
-              )}
-
-              {product.dimensions && (
-                <div className={styles.dimensions}>
-                  <h3 className={styles.dimensionsTitle}>Dimensions</h3>
-                  <div className={styles.dimensionsList}>
-                    {formatDimensions(product.dimensions)}
-                  </div>
-                </div>
-              )}
-
-              <div className={styles.actions}>
-                <div className={styles.quantitySelector}>
-                  <button
-                    className={styles.quantityButton}
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    aria-label="Decrease quantity"
-                  >
-                    −
-                  </button>
-                  <span className={styles.quantity}>{quantity}</span>
-                  <button
-                    className={styles.quantityButton}
-                    onClick={() => setQuantity(quantity + 1)}
-                    aria-label="Increase quantity"
-                  >
-                    +
-                  </button>
-                </div>
-
-                <button className={styles.addToCartButton} onClick={handleAddToCart}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                    <path d="M3 6h18" />
-                    <path d="M16 10a4 4 0 0 1-8 0" />
-                  </svg>
-                  Add to Cart
-                </button>
-
-                <button
-                  className={`${styles.wishlistButton} ${isWishlisted ? styles.active : ''}`}
-                  onClick={() => setIsWishlisted(!isWishlisted)}
-                  aria-label="Add to wishlist"
-                >
-                  <svg viewBox="0 0 24 24" strokeWidth="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                </button>
               </div>
-
-              {/* Add to Room Section */}
               {rooms.length > 0 && (
                 <div className={styles.addToRoomSection}>
                   <div className={styles.addToRoomHeader}>
@@ -287,6 +221,72 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
                   </div>
                 </div>
               )}
+              
+
+              <div className={styles.divider} />
+
+              <p className={styles.description}>{product.description}</p>
+
+              {product.features && (
+                <div className={styles.features}>
+                  <h3 className={styles.featuresTitle}>Features</h3>
+                  <div className={styles.featuresList}>
+                    {product.features.map((feature, idx) => (
+                      <div key={idx} className={styles.featureItem}>{feature}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {product.dimensions && (
+                <div className={styles.dimensions}>
+                  <h3 className={styles.dimensionsTitle}>Dimensions</h3>
+                  <div className={styles.dimensionsList}>
+                    {formatDimensions(product.dimensions)}
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.actions}>
+                <div className={styles.quantitySelector}>
+                  <button
+                    className={styles.quantityButton}
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+                  <span className={styles.quantity}>{quantity}</span>
+                  <button
+                    className={styles.quantityButton}
+                    onClick={() => setQuantity(quantity + 1)}
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button className={styles.addToCartButton} onClick={handleAddToCart}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <path d="M3 6h18" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                  Add to Cart
+                </button>
+
+                {/* Wishlist button is now visually lighter and less prominent */}
+                <button
+                  className={`${styles.wishlistButton} ${isWishlisted ? styles.active : ''}`}
+                  onClick={() => setIsWishlisted(!isWishlisted)}
+                  aria-label="Add to wishlist"
+                  style={{boxShadow: 'none', background: '#f5f3ef', border: '1px solid #eee', color: '#6B6B6B'}}
+                >
+                  <svg viewBox="0 0 24 24" strokeWidth="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
