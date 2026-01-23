@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { trackSearch } from '../../utils/userTracking';
 import styles from './Navigation.module.css';
 
 const Navigation = () => {
@@ -36,7 +37,10 @@ const Navigation = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+      const trimmedQuery = searchQuery.trim();
+      trackSearch(trimmedQuery);
+      navigate(`/shop?search=${encodeURIComponent(trimmedQuery)}`);
+      setSearchQuery('');
     }
   };
 

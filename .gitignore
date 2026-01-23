@@ -1,5 +1,6 @@
 # Dependencies
 Frontend/node_modules/
+Backend/venv/
 
 # Build output
 dist/

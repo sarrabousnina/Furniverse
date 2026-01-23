@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getRelatedProducts } from '../../data/products';
 import { useCart } from '../../context/CartContext';
 import { useRooms } from '../../context/RoomsContext';
 import { getRecommendedProducts } from '../../utils/recommendations';
+import { trackProductView } from '../../utils/userTracking';
 import ProductCard from '../ProductCard/ProductCard';
 import styles from './ProductDetailModal.module.css';
 
@@ -15,6 +16,13 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
   const [showRoomDropdown, setShowRoomDropdown] = useState(false);
 
   const activeRoom = getActiveRoom();
+
+  // Track product view when modal opens
+  useEffect(() => {
+    if (isOpen && product) {
+      trackProductView(product);
+    }
+  }, [isOpen, product]);
 
   if (!product || !isOpen) return null;
 

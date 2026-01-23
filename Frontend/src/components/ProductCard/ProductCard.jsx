@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCart } from '../../context/CartContext';
 import { useProductModal } from '../../context/ProductModalContext';
+import { trackProductClick } from '../../utils/userTracking';
 import styles from './ProductCard.module.css';
 
 
@@ -9,6 +10,7 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
   const { openProductModal } = useProductModal();
 
   const handleCardClick = () => {
+    trackProductClick(product);
     openProductModal(product);
   };
 
