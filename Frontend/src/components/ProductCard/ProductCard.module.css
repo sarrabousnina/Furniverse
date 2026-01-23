@@ -5,7 +5,7 @@
   left: 16px;
   width: 36px;
   height: 36px;
-  background: #e0e0e0;
+  background: #9e9e9e !important;
   border: none;
   border-radius: 50%;
   display: flex;
@@ -18,12 +18,12 @@
 }
 
 .removeButton:hover {
-  background: #bdbdbd;
+  background: #757575 !important;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 .removeButton svg {
-  stroke: #6B6B6B;
+  stroke: #ffffff   !important;
   width: 18px;
   height: 18px;
 }

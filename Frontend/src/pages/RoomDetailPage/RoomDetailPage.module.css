@@ -111,32 +111,38 @@
 
 /* Stats Bar */
 .statsBar {
-  background: white;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: linear-gradient(to bottom, #ffffff 0%, #fafafa 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
   position: sticky;
   top: 70px;
   z-index: 10;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
 }
 
 .statsContainer {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 20px 5%;
+  padding: 36px 5%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: 64px;
 }
 
 .statItem {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 20px;
+  transition: transform 0.3s ease;
+}
+
+.statItem:hover {
+  transform: translateY(-2px);
 }
 
 .statIcon {
-  width: 44px;
-  height: 44px;
+  width: 54px;
+  height: 54px;
   background: linear-gradient(135deg, rgba(40, 97, 96, 0.1) 0%, rgba(40, 97, 96, 0.05) 100%);
   border-radius: 12px;
   display: flex;
@@ -145,33 +151,39 @@
 }
 
 .statIcon svg {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   color: #286160;
 }
 
 .statContent {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .statValue {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text-primary, #1A1A1A);
+  font-size: 1.75rem;
+  font-weight: 750;
+  color: #1A1A1A;
+  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .statLabel {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary, #6B6B6B);
+  font-size: 0.75rem;
+  color: #6B6B6B;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.2px;
+  font-weight: 600;
+  margin-top: 4px;
 }
 
 .statDivider {
-  width: 1px;
-  height: 40px;
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+  width: 2px;
+  height: 60px;
+  background: linear-gradient(180deg, transparent 0%, rgba(40, 97, 96, 0.15) 50%, transparent 100%);
+  border-radius: 2px;
 }
 
 /* Main Content */
@@ -234,7 +246,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(220, 53, 69, 0.95);
+  background: rgba(158, 158, 158, 0.95);
   backdrop-filter: blur(8px);
   border: none;
   border-radius: 50%;
@@ -252,8 +264,12 @@
 }
 
 .removeButton:hover {
-  background: #dc3545;
+  background: rgba(117, 117, 117, 0.95);
   transform: scale(1.1);
+}
+
+.removeButton svg {
+  stroke: white;
 }
 
 /* Carousel */
@@ -600,4 +616,9 @@
   .carouselWrapper {
     padding: 0 5px;
   }
+}
+
+/* Footer Spacing */
+.footerSpacing {
+  height: 80px;
 }
