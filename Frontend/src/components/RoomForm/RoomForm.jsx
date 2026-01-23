@@ -17,7 +17,12 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
     name: '',
     budgetMin: '',
     budgetMax: '',
-    size: '',
+    dimensions: {
+      width: '',
+      length: '',
+      height: '',
+      unit: 'cm'
+    },
     styles: [],
     existingFurniture: '',
     image: null
@@ -76,6 +81,27 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
     }));
   };
 
+  const handleDimensionChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      dimensions: {
+        ...prev.dimensions,
+        [name]: value
+      }
+    }));
+  };
+
+  const handleUnitToggle = (unit) => {
+    setFormData(prev => ({
+      ...prev,
+      dimensions: {
+        ...prev.dimensions,
+        unit
+      }
+    }));
+  };
+
   const toggleStyle = (style) => {
     setFormData(prev => ({
       ...prev,
@@ -108,7 +134,12 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
       ...formData,
       budgetMin: parseInt(formData.budgetMin),
       budgetMax: parseInt(formData.budgetMax),
-      size: formData.size ? parseInt(formData.size) : null
+      dimensions: {
+        width: formData.dimensions.width ? parseFloat(formData.dimensions.width) : null,
+        length: formData.dimensions.length ? parseFloat(formData.dimensions.length) : null,
+        height: formData.dimensions.height ? parseFloat(formData.dimensions.height) : null,
+        unit: formData.dimensions.unit
+      }
     });
   };
 
@@ -191,8 +222,7 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
       <div className={styles.formGroup}>
         <label className={styles.label}>
           <span className={styles.labelText}>
-            Budget Range (per item)
-            <span className={styles.labelHint}>Optional</span>
+            Budget Range (per item)*
           </span>
         </label>
         <div className={styles.budgetContainer}>
@@ -222,23 +252,79 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
         </div>
       </div>
 
-      {/* Room Size */}
+      {/* Room Dimensions */}
       <div className={styles.formGroup}>
         <label className={styles.label}>
           <span className={styles.labelText}>
-            Room Size
-            <span className={styles.labelHint}>Optional</span>
+            Room Dimensions
           </span>
         </label>
-        <input
-          type="number"
-          name="size"
-          value={formData.size}
-          onChange={handleChange}
-          className={styles.input}
-          placeholder="e.g., 250"
-          min="0"
-        />
+        
+        {/* Unit Toggle */}
+        <div className={styles.unitToggle}>
+          <button
+            type="button"
+            className={`${styles.unitButton} ${formData.dimensions.unit === 'cm' ? styles.active : ''}`}
+            onClick={() => handleUnitToggle('cm')}
+          >
+            cm
+          </button>
+          <button
+            type="button"
+            className={`${styles.unitButton} ${formData.dimensions.unit === 'inches' ? styles.active : ''}`}
+            onClick={() => handleUnitToggle('inches')}
+          >
+            inches
+          </button>
+        </div>
+
+        {/* Dimension Inputs */}
+        <div className={styles.dimensionsContainer}>
+          <div className={styles.dimensionInput}>
+            <label className={styles.dimensionLabel}>Width</label>
+            <input
+              type="number"
+              name="width"
+              value={formData.dimensions.width}
+              onChange={handleDimensionChange}
+              className={styles.input}
+              placeholder="0"
+              min="0"
+              step="0.1"
+            />
+            <span className={styles.dimensionUnit}>{formData.dimensions.unit}</span>
+          </div>
+          
+          <div className={styles.dimensionInput}>
+            <label className={styles.dimensionLabel}>Length</label>
+            <input
+              type="number"
+              name="length"
+              value={formData.dimensions.length}
+              onChange={handleDimensionChange}
+              className={styles.input}
+              placeholder="0"
+              min="0"
+              step="0.1"
+            />
+            <span className={styles.dimensionUnit}>{formData.dimensions.unit}</span>
+          </div>
+          
+          <div className={styles.dimensionInput}>
+            <label className={styles.dimensionLabel}>Height</label>
+            <input
+              type="number"
+              name="height"
+              value={formData.dimensions.height}
+              onChange={handleDimensionChange}
+              className={styles.input}
+              placeholder="0"
+              min="0"
+              step="0.1"
+            />
+            <span className={styles.dimensionUnit}>{formData.dimensions.unit}</span>
+          </div>
+        </div>
       </div>
 
       {/* Style Tags */}

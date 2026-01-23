@@ -6,6 +6,13 @@
   transition: box-shadow var(--transition-normal);
   max-width: 700px;
   margin: 0 auto;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.form::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .form:hover {
@@ -125,6 +132,74 @@
   color: var(--color-text-secondary);
   font-weight: 500;
   white-space: nowrap;
+}
+
+/* Dimensions Section */
+.unitToggle {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  background: var(--color-bg);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+
+.unitButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.unitButton.active {
+  background: var(--color-accent);
+  color: white;
+}
+
+.unitButton:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-text-primary);
+}
+
+.dimensionsContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+}
+
+.dimensionInput {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.dimensionLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dimensionInput input {
+  padding-right: 45px;
+}
+
+.dimensionUnit {
+  position: absolute;
+  right: 12px;
+  bottom: 7px;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  pointer-events: none;
 }
 
 .imageUpload {
@@ -306,6 +381,10 @@
 
   .budgetSeparator {
     display: none;
+  }
+
+  .dimensionsContainer {
+    grid-template-columns: 1fr;
   }
 
   .formActions {

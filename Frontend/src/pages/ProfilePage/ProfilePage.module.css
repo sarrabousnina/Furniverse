@@ -243,6 +243,12 @@
   width: 100%;
   max-height: calc(100vh - var(--spacing-xl, 32px));
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modalContent::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 @media (max-width: 768px) {
