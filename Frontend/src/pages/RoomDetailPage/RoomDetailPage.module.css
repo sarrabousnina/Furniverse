@@ -259,46 +259,30 @@
 /* Carousel */
 .carouselWrapper {
   position: relative;
-  padding: 0 50px;
+  padding: 0 10px;
 }
 
 .productSwiper {
-  padding: 10px 0 50px;
+  padding: 10px 0 60px;
 }
 
-.productSwiper :global(.swiper-button-prev),
-.productSwiper :global(.swiper-button-next) {
-  width: 44px;
-  height: 44px;
-  background: white;
-  border-radius: 50%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  color: #286160;
-}
-
-.productSwiper :global(.swiper-button-prev)::after,
-.productSwiper :global(.swiper-button-next)::after {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.productSwiper :global(.swiper-button-prev):hover,
-.productSwiper :global(.swiper-button-next):hover {
-  background: #286160;
-  color: white;
+.productSwiper :global(.swiper-pagination) {
+  bottom: 20px;
 }
 
 .productSwiper :global(.swiper-pagination-bullet) {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   background: #286160;
-  opacity: 0.3;
+  opacity: 0.25;
+  transition: all 0.3s ease;
 }
 
 .productSwiper :global(.swiper-pagination-bullet-active) {
   opacity: 1;
-  width: 28px;
-  border-radius: 5px;
+  width: 32px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #286160 0%, #1a4a49 100%);
 }
 
 /* Empty State */
@@ -525,7 +509,7 @@
   }
   
   .carouselWrapper {
-    padding: 0 40px;
+    padding: 0 10px;
   }
 }
 
@@ -568,7 +552,7 @@
   }
 
   .carouselWrapper {
-    padding: 0 20px;
+    padding: 0 5px;
   }
 
   .addMoreContent {
@@ -614,6 +598,6 @@
   }
 
   .carouselWrapper {
-    padding: 0 10px;
+    padding: 0 5px;
   }
 }

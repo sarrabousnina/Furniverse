@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { Pagination } from 'swiper/modules';
 import 'swiper/css';
-import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { useRooms } from '../../context/RoomsContext';
 import { PRODUCTS } from '../../data/products';
@@ -137,34 +136,33 @@ const RoomDetailPage = () => {
             </div>
             <h1 className={styles.roomTitle}>{room.name}</h1>
             <div className={styles.roomBadges}>
-              <span className={styles.badge}>{room.roomType}</span>
               {room.style && <span className={styles.badge}>{room.style}</span>}
               {formatDimensions() && (
                 <span className={styles.badge}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                  </svg>
-                  {formatDimensions()}
+                </svg>
+                {formatDimensions()}
                 </span>
-              )}
+            )}
             </div>
-          </motion.div>
+        </motion.div>
         </div>
-      </motion.section>
+    </motion.section>
 
       {/* Stats Bar */}
-      <motion.section 
+    <motion.section 
         className={styles.statsBar}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-      >
+    >
         <div className={styles.statsContainer}>
-          <div className={styles.statItem}>
+        <div className={styles.statItem}>
             <div className={styles.statIcon}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-              </svg>
+            </svg>
             </div>
             <div className={styles.statContent}>
               <span className={styles.statValue}>{roomProducts.length}</span>
@@ -265,22 +263,24 @@ const RoomDetailPage = () => {
               transition={{ delay: 0.6 }}
             >
               <Swiper
-                modules={[Navigation, Pagination]}
+                modules={[Pagination]}
                 spaceBetween={24}
                 slidesPerView={1}
-                navigation
-                pagination={{ clickable: true }}
+                speed={600}
+                grabCursor={true}
+                pagination={{ clickable: true, dynamicBullets: true }}
                 breakpoints={{
-                  640: { slidesPerView: 2 },
-                  1024: { slidesPerView: 3 },
-                  1400: { slidesPerView: 4 },
+                  640: { slidesPerView: 2, spaceBetween: 20 },
+                  1024: { slidesPerView: 3, spaceBetween: 24 },
+                  1400: { slidesPerView: 4, spaceBetween: 24 },
                 }}
                 className={styles.productSwiper}
               >
                 {filteredProducts.map((product) => (
                   <SwiperSlide key={product.id}>
                     <div className={styles.productCard}>
-                      <ProductCard product={product} />
+                      {/* ProductCard should not render favorite/heart button in this context */}
+                      <ProductCard product={product} hideFavorite />
                       <button
                         className={styles.removeButton}
                         onClick={(e) => handleRemoveProduct(e, product.id)}

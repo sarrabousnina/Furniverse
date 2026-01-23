@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useCart } from '../../context/CartContext';
 import { useProductModal } from '../../context/ProductModalContext';
 import styles from './ProductCard.module.css';
 
-const ProductCard = ({ product, matchScore = null, matchReasons = [] }) => {
+
+const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavorite = false }) => {
   const { addToCart } = useCart();
   const { openProductModal } = useProductModal();
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const handleCardClick = () => {
     openProductModal(product);
@@ -15,11 +15,6 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [] }) => {
   const handleAddToCart = (e) => {
     e.stopPropagation();
     addToCart(product, 1);
-  };
-
-  const handleWishlist = (e) => {
-    e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
   };
 
   const renderStars = (rating) => {
@@ -54,16 +49,18 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [] }) => {
       <div className={styles.imageWrapper}>
         <img src={product.image} alt={product.name} className={styles.image} loading="lazy" />
 
-        {/* Wishlist Button */}
-        <button
-          className={`${styles.wishlistButton} ${isWishlisted ? styles.active : ''}`}
-          onClick={handleWishlist}
-          aria-label="Add to wishlist"
-        >
-          <svg viewBox="0 0 24 24" strokeWidth="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-        </button>
+        {/* Wishlist Button (hide on Room page) */}
+        {!hideFavorite && (
+          <button
+            className={styles.wishlistButton}
+            onClick={e => e.stopPropagation()}
+            aria-label="Add to wishlist"
+          >
+            <svg viewBox="0 0 24 24" strokeWidth="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Content */}
