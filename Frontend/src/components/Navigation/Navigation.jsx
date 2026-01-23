@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { trackSearch } from '../../utils/userTracking';
 import styles from './Navigation.module.css';
 
@@ -10,6 +11,7 @@ const Navigation = () => {
   const navigate = useNavigate();
   const { cartCount, setIsCartOpen } = useCart();
   const { user, setIsAuthModalOpen, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -129,6 +131,24 @@ const Navigation = () => {
               <span className={styles.userName}>Sign In</span>
             </button>
           )}
+
+          {/* Theme Toggle Button */}
+          <button
+            className={styles.iconButton}
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+          >
+            {isDark ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
 
           {/* Mobile Menu Button */}
           <button

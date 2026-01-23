@@ -1,9 +1,11 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { RoomsProvider } from './context/RoomsContext';
 import { ProductModalProvider, useProductModal } from './context/ProductModalContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './context/ToastContext';
 
 // Pages
 import HomePage from './pages/HomePage/HomePage';
@@ -18,7 +20,19 @@ import Navigation from './components/Navigation/Navigation';
 import CartSidebar from './components/CartSidebar/CartSidebar';
 import AuthModal from './components/AuthModal/AuthModal';
 import ProductDetailModal from './components/ProductDetailModal/ProductDetailModal';
+import ToastContainer from './components/Toast/Toast';
 import './index.css';
+
+// Scroll to top on route change
+function ScrollToTop() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
+
+  return null;
+}
 
 // App content with routing and modals
 function AppContent() {
@@ -28,6 +42,7 @@ function AppContent() {
 
   return (
     <>
+      <ScrollToTop />
       <Navigation />
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -54,15 +69,20 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <CartProvider>
-          <RoomsProvider>
-            <ProductModalProvider>
-              <AppContent />
-            </ProductModalProvider>
-          </RoomsProvider>
-        </CartProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <CartProvider>
+              <RoomsProvider>
+                <ProductModalProvider>
+                  <AppContent />
+                  <ToastContainer />
+                </ProductModalProvider>
+              </RoomsProvider>
+            </CartProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </Router>
   );
 }

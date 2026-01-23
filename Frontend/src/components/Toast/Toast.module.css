@@ -1,0 +1,104 @@
+.container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 400px;
+  padding: 16px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px var(--color-shadow-hover);
+  border: 1px solid var(--color-border);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toastContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  stroke: var(--color-accent);
+}
+
+.message {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.closeButton {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.closeButton:hover {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.closeButton svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+/* Toast variants */
+.toast.success {
+  border-left: 4px solid #10B981;
+}
+
+.toast.success .icon {
+  stroke: #10B981;
+}
+
+.toast.error {
+  border-left: 4px solid #EF4444;
+}
+
+.toast.error .icon {
+  stroke: #EF4444;
+}
+
+.toast.info {
+  border-left: 4px solid #3B82F6;
+}
+
+.toast.info .icon {
+  stroke: #3B82F6;
+}

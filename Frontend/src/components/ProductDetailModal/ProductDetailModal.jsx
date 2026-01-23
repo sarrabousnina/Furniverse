@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getRelatedProducts } from '../../data/products';
 import { useCart } from '../../context/CartContext';
 import { useRooms } from '../../context/RoomsContext';
+import { useToast } from '../../context/ToastContext';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import { trackProductView } from '../../utils/userTracking';
 import ProductCard from '../ProductCard/ProductCard';
@@ -10,6 +11,7 @@ import styles from './ProductDetailModal.module.css';
 const ProductDetailModal = ({ product, isOpen, onClose }) => {
   const { addToCart } = useCart();
   const { rooms, getActiveRoom, addProductToRoom, removeProductFromRoom, isProductInRoom } = useRooms();
+  const { success } = useToast();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -37,6 +39,7 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
+    success(`${quantity > 1 ? `${quantity}x ` : ''}${product.name} successfully added to cart!`);
   };
 
   const renderStars = (rating) => {

@@ -35,6 +35,18 @@
   transition: all var(--transition-normal, 250ms ease);
   cursor: pointer;
   position: relative;
+  animation: fadeInUp 0.5s ease backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .card:hover {

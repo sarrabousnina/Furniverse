@@ -234,7 +234,7 @@ const ShopPage = () => {
               </div>
             ) : (
               <div className={styles.productsGrid}>
-                {filteredProducts.map(product => {
+                {filteredProducts.map((product, index) => {
                   // Add match data if active room exists
                   let matchScore = null;
                   let matchReasons = [];
@@ -252,6 +252,7 @@ const ShopPage = () => {
                       product={product}
                       matchScore={matchScore}
                       matchReasons={matchReasons}
+                      style={{ animationDelay: `${index * 50}ms` }}
                     />
                   );
                 })}

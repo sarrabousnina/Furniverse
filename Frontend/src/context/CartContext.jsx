@@ -33,7 +33,6 @@ export const CartProvider = ({ children }) => {
       }
       return [...prevCart, { ...product, quantity }];
     });
-    setIsCartOpen(true);
   };
 
   const removeFromCart = (productId) => {

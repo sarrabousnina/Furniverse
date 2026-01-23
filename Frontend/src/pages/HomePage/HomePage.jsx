@@ -176,12 +176,13 @@ const HomePage = () => {
             </p>
           </div>
           <div className={styles.productsGrid}>
-            {recommendedProducts.map(product => (
+            {recommendedProducts.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 matchScore={product.matchScore}
                 matchReasons={product.matchReasons}
+                style={{ animationDelay: `${index * 50}ms` }}
               />
             ))}
           </div>
@@ -200,8 +201,12 @@ const HomePage = () => {
           </p>
         </div>
         <div className={styles.productsGrid}>
-          {trendingProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
+          {trendingProducts.map((product, index) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              style={{ animationDelay: `${index * 50}ms` }}
+            />
           ))}
         </div>
         <Link to="/shop" className={styles.viewAllLink}>

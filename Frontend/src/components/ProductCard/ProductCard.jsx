@@ -1,13 +1,15 @@
 import React from 'react';
 import { useCart } from '../../context/CartContext';
 import { useProductModal } from '../../context/ProductModalContext';
+import { useToast } from '../../context/ToastContext';
 import { trackProductClick } from '../../utils/userTracking';
 import styles from './ProductCard.module.css';
 
 
-const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavorite = false }) => {
+const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavorite = false, style }) => {
   const { addToCart } = useCart();
   const { openProductModal } = useProductModal();
+  const { success } = useToast();
 
   const handleCardClick = () => {
     trackProductClick(product);
@@ -17,6 +19,7 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
   const handleAddToCart = (e) => {
     e.stopPropagation();
     addToCart(product, 1);
+    success(`${product.name} successfully added to cart!`);
   };
 
   const renderStars = (rating) => {
@@ -38,7 +41,7 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
   };
 
   return (
-    <div className={styles.card} onClick={handleCardClick}>
+    <div className={styles.card} onClick={handleCardClick} style={style}>
       {/* Match Badge (for recommendations) */}
       {matchScore && (
         <div className={styles.matchBadge}>

@@ -1,9 +1,9 @@
 .navbar {
   position: sticky;
   top: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--color-surface);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--color-border, #E0DDD7);
+  border-bottom: 1px solid var(--color-border);
   z-index: 1000;
   transition: all var(--transition-normal, 250ms ease);
 }
@@ -22,7 +22,7 @@
   align-items: center;
   gap: var(--spacing-sm, 8px);
   text-decoration: none;
-  color: var(--color-text-primary, #1A1A1A);
+  color: var(--color-text-primary);
   transition: opacity var(--transition-fast, 150ms ease);
 }
 
@@ -74,7 +74,7 @@
 
 .navLink {
   text-decoration: none;
-  color: var(--color-text-primary, #1A1A1A);
+  color: var(--color-text-primary);
   font-weight: 500;
   font-size: 0.9375rem;
   transition: color var(--transition-fast, 150ms ease);
@@ -82,11 +82,11 @@
 }
 
 .navLink:hover {
-  color: var(--color-accent, #0D4D4D);
+  color: var(--color-accent);
 }
 
 .navLinkActive {
-  color: var(--color-accent, #0D4D4D);
+  color: var(--color-accent);
 }
 
 .navLinkActive::after {
@@ -113,17 +113,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg, #F5F3EF);
+  background: var(--color-bg-alt);
   border-radius: var(--radius-md, 10px);
-  color: var(--color-text-primary, #1A1A1A);
+  color: var(--color-text-primary);
   transition: all var(--transition-fast, 150ms ease);
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border);
 }
 
 .iconButton:hover {
-  background: var(--color-accent-light, #E8F3F3);
-  color: var(--color-accent, #0D4D4D);
+  background: var(--color-accent-light);
+  color: var(--color-accent);
   transform: translateY(-1px);
 }
 
@@ -154,16 +154,16 @@
   align-items: center;
   gap: var(--spacing-sm, 8px);
   padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
-  background: var(--color-bg, #F5F3EF);
+  background: var(--color-bg-alt);
   border-radius: var(--radius-md, 10px);
   transition: all var(--transition-fast, 150ms ease);
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border);
 }
 
 .userButton:hover {
-  background: var(--color-accent-light, #E8F3F3);
-  border-color: var(--color-accent, #0D4D4D);
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
 }
 
 .userAvatar {
@@ -182,7 +182,7 @@
 .userName {
   font-weight: 500;
   font-size: 0.9375rem;
-  color: var(--color-text-primary, #1A1A1A);
+  color: var(--color-text-primary);
 }
 
 .searchBar {
@@ -194,22 +194,23 @@
 .searchInput {
   width: 100%;
   padding: var(--spacing-sm, 8px) var(--spacing-md, 16px) var(--spacing-sm, 8px) 40px;
-  background: var(--color-bg, #F5F3EF);
-  border: 1px solid var(--color-border, #E0DDD7);
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md, 10px);
   font-size: 0.9375rem;
+  color: var(--color-text-primary);
   transition: all var(--transition-fast, 150ms ease);
 }
 
 .searchInput:hover,
 .searchInput:focus {
-  border-color: var(--color-accent, #0D4D4D);
-  background: var(--color-surface, #FFFFFF);
+  border-color: var(--color-accent);
+  background: var(--color-surface);
 }
 
 .searchInput:focus {
   outline: none;
-  box-shadow: 0 0 0 3px var(--color-accent-light, #E8F3F3);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
 }
 
 .searchIcon {
@@ -217,7 +218,7 @@
   left: var(--spacing-sm, 8px);
   top: 50%;
   transform: translateY(-50%);
-  color: var(--color-text-secondary, #6B6B6B);
+  color: var(--color-text-secondary);
   pointer-events: none;
 }
 
