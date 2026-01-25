@@ -16,6 +16,7 @@ This creates a rich, multimodal vector database in Qdrant that enables:
 import json
 import sys
 import numpy as np
+import time
 from pathlib import Path
 from typing import List, Dict, Any
 from tqdm import tqdm
@@ -63,7 +64,11 @@ class MultimodalIndexer:
         self.use_graph = use_graph
         
         # Initialize components
-        self.client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
+        self.client = QdrantClient(
+            url=self.qdrant_url, 
+            api_key=self.qdrant_api_key,
+            timeout=300  # 5 minute timeout for large uploads
+        )
         self.embedding_engine = EmbeddingEngine(
             qdrant_url=self.qdrant_url,
             qdrant_api_key=self.qdrant_api_key
@@ -207,7 +212,7 @@ class MultimodalIndexer:
         # Step 4: Index into Qdrant (with batching to avoid timeouts)
         print("\n[4/4] Uploading to Qdrant...")
         
-        batch_size = 20  # Upload 20 products at a time
+        batch_size = 3  # Upload 3 products at a time to avoid timeout
         points = []
         for product in tqdm(products, desc="  Building points"):
             pid = str(product['id'])
@@ -261,22 +266,46 @@ class MultimodalIndexer:
             
             points.append(point)
             
-            # Batch upload
+            # Batch upload with retry logic
             if len(points) >= batch_size:
-                self.client.upsert(
-                    collection_name='products_multimodal',
-                    points=points
-                )
-                print(f"    \u2713 Uploaded batch ({len(points)} products)")
-                points = []
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        self.client.upsert(
+                            collection_name='products_multimodal',
+                            points=points
+                        )
+                        print(f"    ✓ Uploaded batch ({len(points)} products)")
+                        points = []
+                        break
+                    except Exception as e:
+                        if attempt < max_retries - 1:
+                            wait_time = (attempt + 1) * 5
+                            print(f"    ⚠ Upload failed (attempt {attempt+1}/{max_retries}), retrying in {wait_time}s...")
+                            time.sleep(wait_time)
+                        else:
+                            print(f"    ✗ Upload failed after {max_retries} attempts: {e}")
+                            raise
         
-        # Upload remaining points
+        # Upload remaining points with retry
         if points:
-            self.client.upsert(
-                collection_name='products_multimodal',
-                points=points
-            )
-            print(f"    \u2713 Uploaded final batch ({len(points)} products)")
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    self.client.upsert(
+                        collection_name='products_multimodal',
+                        points=points
+                    )
+                    print(f"    ✓ Uploaded final batch ({len(points)} products)")
+                    break
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        wait_time = (attempt + 1) * 5
+                        print(f"    ⚠ Upload failed (attempt {attempt+1}/{max_retries}), retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        print(f"    ✗ Upload failed after {max_retries} attempts: {e}")
+                        raise
         
         print(f"  ✓ Indexed {len(products)} products into Qdrant")
         
