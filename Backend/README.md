@@ -1,68 +1,155 @@
-# Furniverse Backend API
+# Furniverse AI Backend
 
-Minimal FastAPI backend for the Furniverse hackathon project.
+FastAPI backend serving furniture product data with clean, frontend-ready JSON responses.
 
-## Setup
+## Features
 
-**Virtual environment is already created. To activate it:**
+✅ **CSV Data Source** - Loads 403 products from `data/dataset.csv`  
+✅ **Frontend-Compatible API** - Returns exact product structure expected by React frontend  
+✅ **Data Transformation** - Maps CSV columns to frontend schema with proper types  
+✅ **Repository Pattern** - Easy to swap CSV for Qdrant vector DB later  
+✅ **Category Mapping** - Converts IKEA categories to simplified frontend categories  
+✅ **Auto-validation** - Pydantic models ensure data integrity  
 
-**Windows (Command Prompt):**
+## Quick Start
+
 ```bash
-cd Backend
-venv\Scripts\activate
-```
-
-**Windows (PowerShell):**
-```bash
-cd Backend
-venv\Scripts\Activate.ps1
-```
-
-**Mac/Linux:**
-```bash
-cd Backend
-source venv/bin/activate
-```
-
-**Then install dependencies and run:**
-```bash
+# Install dependencies
 pip install -r requirements.txt
-uvicorn main:app --reload
+
+# Start server (from Backend directory)
+cd Backend
+python -m uvicorn main:app --reload --port 8000
 ```
 
-The API will be available at `http://localhost:8000`
+Server runs at: **http://127.0.0.1:8000**
 
-**To deactivate the virtual environment when done:**
+## API Endpoints
+
+### 📋 GET `/products`
+Get all products (frontend-ready JSON)
+
+**Query Parameters:**
+- `category` (optional) - Filter by category: "Sofas", "Tables", "Lamps", "Chairs", "Beds", "Storage"
+- `search` (optional) - Search by keywords
+
+**Examples:**
 ```bash
-deactivate
+GET /products                    # All products
+GET /products?category=Sofas     # Only sofas
+GET /products?search=modern      # Search for "modern"
 ```
 
-## API Documentation
+### 🔍 GET `/products/{id}`
+Get single product by ID
 
-Once running, visit:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+**Example:**
+```bash
+GET /products/40595942
+```
 
-## Endpoints
+### 📂 GET `/categories`
+Get all available categories
 
-### GET /
-Health check endpoint.
-
-### POST /recommend
-Accepts: `{ "query": "user's text input" }`
-
-Returns:
+**Response:**
 ```json
 {
-  "recommended_product": "P123",
-  "product_name": "Modern Comfort Sofa",
-  "explanation": "We recommend this based on your query: '...'. Real AI will use vector search soon!",
-  "confidence": 0.85
+  "categories": ["Beds", "Chairs", "Lamps", "Sofas", "Storage", "Tables"]
 }
 ```
 
-## Notes
+### 🤖 POST `/recommend`
+AI-powered recommendations (placeholder - simple search for now)
 
-- CORS enabled for `http://localhost:3000` and `http://localhost:3001`
-- No database, no auth (placeholder for future AI implementation)
-- Real AI logic (Qdrant, embeddings) will be added later
+**Request:**
+```json
+{
+  "query": "comfortable modern sofa"
+}
+```
+
+### 📖 GET `/docs`
+Interactive API documentation (Swagger UI)
+
+## Product Schema
+
+Each product has this exact structure (matches frontend):
+
+```json
+{
+  "id": 40595942,
+  "name": "GLOSTAD Sofa",
+  "category": "Sofas",
+  "price": 199,
+  "rating": 3.9,
+  "reviewCount": 40,
+  "image": "https://...",
+  "images": ["https://...", "https://..."],
+  "description": "GLOSTAD Sofa - Knisa dark gray...",
+  "features": ["GLOSTAD Sofa", "Removable cover", "Stationary cover"],
+  "styles": ["Scandinavian", "Minimalist"],
+  "colors": ["natural"],
+  "tags": ["affordable", "comfortable", "minimalist"],
+  "dimensions": {
+    "width": 67,
+    "height": 26,
+    "depth": 30
+  },
+  "inStock": true,
+  "trending": false
+}
+```
+
+## Data Transformation
+
+The backend handles these transformations automatically:
+
+| CSV Format | Frontend Format | Transformation |
+|------------|----------------|----------------|
+| Pipe-delimited strings `"a\|b\|c"` | Arrays `["a","b","c"]` | Split by `\|` |
+| Single color `"blue"` | Array `["blue"]` | Wrap in array |
+| String `"True"/"False"` | Boolean `true/false` | Convert type |
+| Flat columns (width, height, depth) | Nested object | Build `dimensions` object |
+| Detailed categories `"Three-seat sofas"` | Simple `"Sofas"` | Map via `CATEGORY_MAP` |
+| Zero values `0` | Omitted | Exclude from dimensions |
+
+## Architecture
+
+```
+main.py
+├── Pydantic Models (Product, Dimensions)
+├── Category Mapping (IKEA → Frontend)
+├── Repository Pattern
+│   ├── ProductRepository (Abstract)
+│   └── CSVProductRepository (Implementation)
+└── REST Endpoints (FastAPI)
+```
+
+**Why Repository Pattern?**
+- Easy to swap data sources (CSV → Qdrant)
+- No API changes needed when upgrading
+- Frontend stays unchanged
+
+## Future: Qdrant Integration
+
+When ready to migrate from CSV to Qdrant:
+
+1. Create `QdrantProductRepository` implementing `ProductRepository`
+2. Swap `CSVProductRepository` → `QdrantProductRepository` in startup
+3. API remains identical, frontend unchanged ✅
+
+```python
+# Future implementation
+class QdrantProductRepository(ProductRepository):
+    def search(self, query: str) -> List[Product]:
+        # Vector search with embeddings
+        embeddings = model.encode(query)
+        results = qdrant_client.search(...)
+        return [self._to_product(r) for r in results]
+```
+
+## Coming Soon
+- 🔮 Vector embeddings for semantic search
+- 🎯 AI-powered recommendations using Qdrant
+- 🔍 Similarity search based on product features
+- 📊 User preference tracking
