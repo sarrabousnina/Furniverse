@@ -54,3 +54,5 @@ lerna-debug.log*
 
 # Vite
 .vite
+
+Data/raw/images
