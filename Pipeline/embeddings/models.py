@@ -9,7 +9,7 @@ import warnings
 
 
 class SBERTModel:
-    """FastEmbed text encoder (lightweight ONNX-based)"""
+    """Sentence Transformers text encoder"""
     
     def __init__(self, model_name: str = 'sentence-transformers/all-MiniLM-L6-v2'):
         self.model_name = model_name
@@ -19,9 +19,9 @@ class SBERTModel:
     def model(self):
         """Lazy load the model"""
         if self._model is None:
-            from fastembed import TextEmbedding
-            print(f"Loading FastEmbed model: {self.model_name}...")
-            self._model = TextEmbedding(model_name=self.model_name)
+            from sentence_transformers import SentenceTransformer
+            print(f"Loading SentenceTransformer model: {self.model_name}...")
+            self._model = SentenceTransformer(self.model_name)
         return self._model
     
     def encode(self, text: Union[str, List[str]], **kwargs) -> np.ndarray:
@@ -40,12 +40,11 @@ class SBERTModel:
         if is_single:
             text = [text]
         
-        # FastEmbed returns generator, convert to numpy array
-        embeddings = list(self.model.embed(text))
-        result = np.array(embeddings)
+        # Encode using sentence-transformers
+        embeddings = self.model.encode(text, **kwargs)
         
         # Return single embedding or batch
-        return result[0] if is_single else result
+        return embeddings[0] if is_single else embeddings
     
     @property
     def dimension(self) -> int:
@@ -75,12 +74,20 @@ class CLIPModel:
                 raise
         return self._model
     
+    @property
+    def processor(self):
+        """Lazy load the processor (loads model first if needed)"""
+        if self._processor is None:
+            _ = self.model  # Trigger model loading which also loads processor
+        return self._processor
+    
     def encode_text(self, text: Union[str, List[str]]) -> np.ndarray:
         """Encode text with CLIP text encoder"""
         if isinstance(text, str):
             text = [text]
         
-        inputs = self._processor(text=text, return_tensors="pt", padding=True)
+        # Truncate to max 77 tokens (CLIP's limit)
+        inputs = self.processor(text=text, return_tensors="pt", padding=True, truncation=True, max_length=77)
         outputs = self.model.get_text_features(**inputs)
         
         return outputs.detach().numpy()
@@ -98,18 +105,27 @@ class CLIPModel:
         from PIL import Image
         import requests
         from io import BytesIO
+        from pathlib import Path
         
         # Load image
         if isinstance(image_url_or_array, str):
             if image_url_or_array.startswith('http'):
                 response = requests.get(image_url_or_array, timeout=10)
                 image = Image.open(BytesIO(response.content)).convert('RGB')
+            elif image_url_or_array.startswith('/'):
+                # Handle local paths starting with /
+                project_root = Path(__file__).parent.parent.parent
+                image_path = image_url_or_array.lstrip('/')
+                if image_path.startswith('images/products/'):
+                    image_path = image_path[len('images/products/'):]
+                full_path = project_root / 'Data' / 'raw' / 'images' / image_path
+                image = Image.open(full_path).convert('RGB')
             else:
                 image = Image.open(image_url_or_array).convert('RGB')
         else:
             image = image_url_or_array
         
-        inputs = self._processor(images=image, return_tensors="pt")
+        inputs = self.processor(images=image, return_tensors="pt")
         outputs = self.model.get_image_features(**inputs)
         
         return outputs.detach().numpy().squeeze()

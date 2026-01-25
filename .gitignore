@@ -14,6 +14,9 @@ build/
 .env.test.local
 .env.production.local
 
+# Qdrant Cloud credentials (IMPORTANT: Keep this private!)
+Pipeline/qdrant_config.py
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

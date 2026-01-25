@@ -6,17 +6,29 @@ class EmbeddingEngine:
     """Single source of truth for all embeddings"""
     
     def __init__(self, 
+                 qdrant_url: str = None,
+                 qdrant_api_key: str = None,
                  qdrant_host: str = 'localhost',
                  qdrant_port: int = 6333,
                  collection_name: str = 'furniture_products'):
         self.sbert = SBERTModel()
         self.clip = CLIPModel()
         self.graph = GraphModel()
-        self.storage = EmbeddingStorage(
-            host=qdrant_host,
-            port=qdrant_port,
-            collection_name=collection_name
-        )
+        
+        # Support both cloud and local connections
+        if qdrant_url and qdrant_api_key:
+            from qdrant_client import QdrantClient
+            self.storage = EmbeddingStorage(
+                url=qdrant_url,
+                api_key=qdrant_api_key,
+                collection_name=collection_name
+            )
+        else:
+            self.storage = EmbeddingStorage(
+                host=qdrant_host,
+                port=qdrant_port,
+                collection_name=collection_name
+            )
     
     # === EMBEDDING METHODS ===
     

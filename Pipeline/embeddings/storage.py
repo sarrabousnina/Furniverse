@@ -26,6 +26,8 @@ class EmbeddingStorage:
     """
     
     def __init__(self, 
+                 url: str = None,
+                 api_key: str = None,
                  host: str = 'localhost', 
                  port: int = 6333,
                  collection_name: str = 'furniture_products'):
@@ -33,11 +35,16 @@ class EmbeddingStorage:
         Initialize Qdrant storage.
         
         Args:
-            host: Qdrant server host
-            port: Qdrant server port
+            url: Qdrant Cloud URL (optional)
+            api_key: Qdrant Cloud API key (optional)
+            host: Qdrant server host (for local)
+            port: Qdrant server port (for local)
             collection_name: Name of the collection to use
         """
-        self.client = QdrantClient(host=host, port=port)
+        if url and api_key:
+            self.client = QdrantClient(url=url, api_key=api_key)
+        else:
+            self.client = QdrantClient(host=host, port=port)
         self.collection_name = collection_name
         self._cache = {}
     
