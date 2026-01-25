@@ -6,7 +6,7 @@ import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { useRooms } from '../../context/RoomsContext';
-import { PRODUCTS } from '../../data/products';
+import { useProducts } from '../../context/ProductsContext';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from './RoomDetailPage.module.css';
 
@@ -14,9 +14,31 @@ const RoomDetailPage = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { getRoomById, removeProductFromRoom } = useRooms();
+  const { products, loading, error } = useProducts();
   const [activeCategory, setActiveCategory] = useState('all');
 
   const room = getRoomById(roomId);
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+          <p>Loading room...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div style={{ textAlign: 'center', padding: '100px 0', color: 'red' }}>
+          <p>Error loading products: {error}</p>
+          <p>Please make sure the backend server is running at http://localhost:8000</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!room) {
     return (
@@ -41,7 +63,7 @@ const RoomDetailPage = () => {
     );
   }
 
-  const roomProducts = PRODUCTS.filter(product => 
+  const roomProducts = products.filter(product => 
     room.products?.includes(product.id)
   );
 

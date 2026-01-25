@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getProductById, getRelatedProducts } from '../../data/products';
+import { useProducts } from '../../context/ProductsContext';
 import { useCart } from '../../context/CartContext';
 import { useRooms } from '../../context/RoomsContext';
 import { getRecommendedProducts } from '../../utils/recommendations';
@@ -11,12 +11,35 @@ const ProductDetailPage = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
   const { getActiveRoom } = useRooms();
+  const { getProductById, getRelatedProducts, loading, error } = useProducts();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const product = getProductById(id);
   const activeRoom = getActiveRoom();
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+          <p>Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div style={{ textAlign: 'center', padding: '100px 0', color: 'red' }}>
+          <p>Error loading product: {error}</p>
+          <p>Please make sure the backend server is running at http://localhost:8000</p>
+          <Link to="/shop">Back to Shop</Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (

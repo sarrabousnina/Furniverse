@@ -6,6 +6,7 @@ import { RoomsProvider } from './context/RoomsContext';
 import { ProductModalProvider, useProductModal } from './context/ProductModalContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
+import { ProductsProvider } from './context/ProductsContext';
 
 // Pages
 import HomePage from './pages/HomePage/HomePage';
@@ -72,14 +73,16 @@ function App() {
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <CartProvider>
-              <RoomsProvider>
-                <ProductModalProvider>
-                  <AppContent />
-                  <ToastContainer />
-                </ProductModalProvider>
-              </RoomsProvider>
-            </CartProvider>
+            <ProductsProvider>
+              <CartProvider>
+                <RoomsProvider>
+                  <ProductModalProvider>
+                    <AppContent />
+                    <ToastContainer />
+                  </ProductModalProvider>
+                </RoomsProvider>
+              </CartProvider>
+            </ProductsProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

@@ -7,22 +7,49 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { useRooms } from '../../context/RoomsContext';
-import { PRODUCTS, CATEGORIES } from '../../data/products';
-import { getRecommendedProducts, getTrendingProducts } from '../../utils/recommendations';
+import { useProducts } from '../../context/ProductsContext';
+import { CATEGORIES } from '../../data/products';
+import { getRecommendedProducts } from '../../utils/recommendations';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from './HomePage.module.css';
 
 const HomePage = () => {
   const { rooms, getActiveRoom } = useRooms();
+  const { products, loading, error, getTrendingProducts } = useProducts();
   const activeRoom = getActiveRoom();
 
   // Get trending products
-  const trendingProducts = getTrendingProducts(PRODUCTS, 8);
+  const trendingProducts = getTrendingProducts().slice(0, 8);
 
   // Get personalized recommendations if user has rooms
   const recommendedProducts = activeRoom
-    ? getRecommendedProducts(activeRoom, PRODUCTS, 8)
+    ? getRecommendedProducts(activeRoom, products, 8)
     : [];
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.container}>
+          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+            <p>Loading products...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.container}>
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: 'red' }}>
+            <p>Error loading products: {error}</p>
+            <p>Please make sure the backend server is running at http://localhost:8000</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -155,7 +182,7 @@ const HomePage = () => {
                   </div>
                   <div className={styles.categoryName}>{category.name}</div>
                   <div className={styles.categoryCount}>
-                    {PRODUCTS.filter(p => p.category === category.name).length} items
+                    {products.filter(p => p.category.toLowerCase() === category.id).length} items
                   </div>
                 </Link>
               </SwiperSlide>

@@ -1070,13 +1070,15 @@ export const PRODUCTS = [
 export const CATEGORIES = [
   { id: 'all', name: 'All Products', icon: '🛋️' },
   { id: 'sofas', name: 'Sofas', icon: '🛋️' },
+  { id: 'chairs', name: 'Chairs', icon: '🪑' },
   { id: 'tables', name: 'Tables', icon: '🪵' },
-  { id: 'lamps', name: 'Lamps', icon: '💡' },
-  { id: 'chairs', name: 'Chairs', icon: '/images/categories/chair.png' },
-  { id: 'bed-frames', name: 'Bed Frames', icon: '🛏️' },
-  { id: 'desks', name: 'Desks', icon: '🖥️' },
+  { id: 'beds', name: 'Beds', icon: '🛏️' },
   { id: 'storage', name: 'Storage', icon: '🗄️' },
-  { id: 'decor', name: 'Decor', icon: '🖼️' },
+  { id: 'bookcases', name: 'Bookcases', icon: '📚' },
+  { id: 'tv-media', name: 'TV & Media', icon: '📺' },
+  { id: 'lighting', name: 'Lighting', icon: '💡' },
+  { id: 'textiles', name: 'Textiles', icon: '🧵' },
+  { id: 'decoration', name: 'Decoration', icon: '🖼️' },
 ];
 
 // Helper function to get products by category

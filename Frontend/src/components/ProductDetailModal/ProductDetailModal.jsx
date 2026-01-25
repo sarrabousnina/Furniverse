@@ -1,40 +1,115 @@
 import React, { useState, useEffect } from 'react';
-import { getRelatedProducts } from '../../data/products';
+import { useProducts } from '../../context/ProductsContext';
 import { useCart } from '../../context/CartContext';
 import { useRooms } from '../../context/RoomsContext';
 import { useToast } from '../../context/ToastContext';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import { trackProductView } from '../../utils/userTracking';
+import { fetchProductById } from '../../services/api';
 import ProductCard from '../ProductCard/ProductCard';
 import styles from './ProductDetailModal.module.css';
 
-const ProductDetailModal = ({ product, isOpen, onClose }) => {
+const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
   const { addToCart } = useCart();
   const { rooms, getActiveRoom, addProductToRoom, removeProductFromRoom, isProductInRoom } = useRooms();
   const { success } = useToast();
+  const { getRelatedProducts } = useProducts();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showRoomDropdown, setShowRoomDropdown] = useState(false);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const activeRoom = getActiveRoom();
 
-  // Track product view when modal opens
+  // Fetch full product details from backend when modal opens
   useEffect(() => {
-    if (isOpen && product) {
-      trackProductView(product);
-    }
-  }, [isOpen, product]);
+    const loadProduct = async () => {
+      console.log('Modal opened with product:', productProp);
+      if (!isOpen || !productProp?.id) {
+        console.log('No product or modal closed');
+        setProduct(null);
+        return;
+      }
 
-  if (!product || !isOpen) return null;
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('Fetching product details for ID:', productProp.id);
+        const productData = await fetchProductById(productProp.id);
+        
+        if (productData) {
+          console.log('Product data loaded:', productData);
+          setProduct(productData);
+          trackProductView(productData);
+        } else {
+          console.log('Product not found');
+          setError('Product not found');
+        }
+      } catch (err) {
+        console.error('Error loading product details:', err);
+        setError('Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const relatedProducts = getRelatedProducts(product.id);
+    loadProduct();
+  }, [isOpen, productProp?.id]);
 
-  // Get personalized recommendations for active room
+  if (!isOpen) return null;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className={styles.modalOverlay} onClick={onClose}>
+        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+            <p>Loading product details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error || !product) {
+    return (
+      <div className={styles.modalOverlay} onClick={onClose}>
+        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+            <p>{error || 'Product not found'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  let relatedProducts = [];
   let recommendedProducts = [];
-  if (activeRoom) {
-    const recs = getRecommendedProducts(activeRoom, [product, ...relatedProducts], 5);
-    recommendedProducts = recs.filter(p => p.id !== product.id).slice(0, 4);
+  
+  try {
+    relatedProducts = getRelatedProducts(product.id) || [];
+
+    // Get personalized recommendations for active room
+    if (activeRoom) {
+      const recs = getRecommendedProducts(activeRoom, [product, ...relatedProducts], 5);
+      recommendedProducts = recs.filter(p => p.id !== product.id).slice(0, 4);
+    }
+  } catch (error) {
+    console.error('Error getting recommendations:', error);
   }
 
   const handleAddToCart = () => {
@@ -64,12 +139,13 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
 
     // Check for nested dimensions (e.g., nesting tables, storage sets)
     const nestedKeys = Object.keys(dimensions).filter(key =>
-      typeof dimensions[key] === 'object' && !Array.isArray(dimensions[key])
+      typeof dimensions[key] === 'object' && dimensions[key] !== null && !Array.isArray(dimensions[key])
     );
 
     if (nestedKeys.length > 0) {
       return nestedKeys.map(key => {
         const item = dimensions[key];
+        if (!item) return null; // Skip null items
         const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
         return (
           <div key={key} className={styles.nestedDimension}>
@@ -140,7 +216,7 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
           <nav className={styles.breadcrumb}>
             <span className={styles.breadcrumbLink}>Shop</span>
             <span className={styles.breadcrumbSeparator}>/</span>
-            <span>{product.category}</span>
+            <span>{product.category || 'All'}</span>
           </nav>
 
           <div className={styles.contentLayout}>
@@ -172,13 +248,13 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
             <div className={styles.details}>
               {/* Modern, premium grouping: Add to Room at top, then title/price, then details */}
               <div className={styles.productHeaderGroup}>
-                <div className={styles.category}>{product.category}</div>
-                <h1 className={styles.title}>{product.name}</h1>
-                <div className={styles.price}>${product.price.toLocaleString()}</div>
+                <div className={styles.category}>{product.category || 'Uncategorized'}</div>
+                <h1 className={styles.title}>{product.name || 'Product'}</h1>
+                <div className={styles.price}>${(product.price || 0).toLocaleString()}</div>
                 <div className={styles.rating}>
-                  <div className={styles.stars}>{renderStars(product.rating)}</div>
+                  <div className={styles.stars}>{renderStars(product.rating || 0)}</div>
                   <span className={styles.ratingText}>
-                    {product.rating} ({product.reviewCount} reviews)
+                    {product.rating || 0} ({product.reviewCount || 0} reviews)
                   </span>
                 </div>
               </div>
@@ -236,9 +312,9 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
 
               <div className={styles.divider} />
 
-              <p className={styles.description}>{product.description}</p>
+              <p className={styles.description}>{product.description || 'No description available.'}</p>
 
-              {product.features && (
+              {product.features && product.features.length > 0 && (
                 <div className={styles.features}>
                   <h3 className={styles.featuresTitle}>Features</h3>
                   <div className={styles.featuresList}>

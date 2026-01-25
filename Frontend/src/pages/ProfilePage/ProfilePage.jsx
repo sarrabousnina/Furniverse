@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useRooms } from '../../context/RoomsContext';
 import { useAuth } from '../../context/AuthContext';
-import { PRODUCTS } from '../../data/products';
+import { useProducts } from '../../context/ProductsContext';
 import RoomForm from '../../components/RoomForm/RoomForm';
 import styles from './ProfilePage.module.css';
 
@@ -11,6 +11,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { rooms, addRoom, updateRoom, deleteRoom } = useRooms();
   const { user } = useAuth();
+  const { products } = useProducts();
   const [showForm, setShowForm] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
 
@@ -19,7 +20,7 @@ const ProfilePage = () => {
     roomCount: rooms.length,
     totalItems: rooms.reduce((sum, r) => sum + (r.products?.length || 0), 0),
     totalValue: rooms.reduce((sum, r) => {
-      const roomProducts = PRODUCTS.filter(p => r.products?.includes(p.id));
+      const roomProducts = products.filter(p => r.products?.includes(p.id));
       return sum + roomProducts.reduce((pSum, p) => pSum + p.price, 0);
     }, 0)
   };

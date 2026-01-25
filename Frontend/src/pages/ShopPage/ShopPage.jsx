@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { PRODUCTS, CATEGORIES } from '../../data/products';
+import { useProducts } from '../../context/ProductsContext';
+import { CATEGORIES } from '../../data/products';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import { useRooms } from '../../context/RoomsContext';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -10,6 +11,7 @@ const ShopPage = () => {
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
   const searchParam = searchParams.get('search');
+  const { products, loading, error } = useProducts();
   const { rooms, getActiveRoom } = useRooms();
   const activeRoom = getActiveRoom();
 
@@ -21,18 +23,18 @@ const ShopPage = () => {
   // Get all unique styles
   const allStyles = useMemo(() => {
     const styles = new Set();
-    PRODUCTS.forEach(p => p.styles?.forEach(s => styles.add(s)));
+    products.forEach(p => p.styles?.forEach(s => styles.add(s)));
     return Array.from(styles).sort();
-  }, []);
+  }, [products]);
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
-    let products = [...PRODUCTS];
+    let productsList = [...products];
 
     // Filter by search query
     if (searchParam) {
       const searchLower = searchParam.toLowerCase();
-      products = products.filter(p =>
+      productsList = productsList.filter(p =>
         p.name.toLowerCase().includes(searchLower) ||
         p.category.toLowerCase().includes(searchLower) ||
         p.description?.toLowerCase().includes(searchLower) ||
@@ -42,53 +44,53 @@ const ShopPage = () => {
 
     // Filter by category
     if (categoryParam) {
-      products = products.filter(
+      productsList = productsList.filter(
         p => p.category.toLowerCase() === categoryParam.toLowerCase()
       );
     }
 
     // Filter by selected categories
     if (selectedCategories.length > 0) {
-      products = products.filter(p =>
+      productsList = productsList.filter(p =>
         selectedCategories.includes(p.category.toLowerCase())
       );
     }
 
     // Filter by styles
     if (selectedStyles.length > 0) {
-      products = products.filter(p =>
+      productsList = productsList.filter(p =>
         p.styles?.some(s => selectedStyles.includes(s.toLowerCase()))
       );
     }
 
     // Filter by price range
     if (priceRange.min) {
-      products = products.filter(p => p.price >= parseInt(priceRange.min));
+      productsList = productsList.filter(p => p.price >= parseInt(priceRange.min));
     }
     if (priceRange.max) {
-      products = products.filter(p => p.price <= parseInt(priceRange.max));
+      productsList = productsList.filter(p => p.price <= parseInt(priceRange.max));
     }
 
     // Sort products
     switch (sortBy) {
       case 'price-low':
-        products.sort((a, b) => a.price - b.price);
+        productsList.sort((a, b) => a.price - b.price);
         break;
       case 'price-high':
-        products.sort((a, b) => b.price - a.price);
+        productsList.sort((a, b) => b.price - a.price);
         break;
       case 'rating':
-        products.sort((a, b) => b.rating - a.rating);
+        productsList.sort((a, b) => b.rating - a.rating);
         break;
       case 'featured':
       default:
         // Trending products first
-        products.sort((a, b) => (b.trending ? 1 : 0) - (a.trending ? 1 : 0));
+        productsList.sort((a, b) => (b.trending ? 1 : 0) - (a.trending ? 1 : 0));
         break;
     }
 
-    return products;
-  }, [categoryParam, searchParam, selectedCategories, selectedStyles, priceRange, sortBy]);
+    return productsList;
+  }, [products, categoryParam, searchParam, selectedCategories, selectedStyles, priceRange, sortBy]);
 
   // Toggle category filter
   const toggleCategory = (category) => {
@@ -107,6 +109,31 @@ const ShopPage = () => {
         : [...prev, style]
     );
   };
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.container}>
+          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+            <p>Loading products...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.container}>
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: 'red' }}>
+            <p>Error loading products: {error}</p>
+            <p>Please make sure the backend server is running at http://localhost:8000</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -149,7 +176,7 @@ const ShopPage = () => {
                     </div>
                     <span className={styles.filterLabel}>{cat.name}</span>
                     <span className={styles.filterCount}>
-                      {PRODUCTS.filter(p => p.category === cat.name).length}
+                      {products.filter(p => p.category.toLowerCase() === cat.id).length}
                     </span>
                   </div>
                 ))}
@@ -208,7 +235,7 @@ const ShopPage = () => {
           <div>
             <div className={styles.resultsHeader}>
               <span className={styles.resultsCount}>
-                Showing {filteredProducts.length} of {PRODUCTS.length} products
+                Showing {filteredProducts.length} of {products.length} products
               </span>
               <select
                 className={styles.sortSelect}
