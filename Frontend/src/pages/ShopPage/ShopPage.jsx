@@ -273,16 +273,6 @@ const ShopPage = () => {
               <span className={styles.resultsCount}>
                 Showing {filteredProducts.length} of {products.length} products
               </span>
-              <select
-                className={styles.sortSelect}
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="featured">Featured</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-              </select>
             </div>
 
             {filteredProducts.length === 0 ? (

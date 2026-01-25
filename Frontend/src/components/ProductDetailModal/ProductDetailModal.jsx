@@ -358,21 +358,51 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
                     {showRoomDropdown && (
                       <div className={styles.roomDropdown}>
                         {rooms.map(room => {
-                          const isInRoom = isProductInRoom(room.id, product.id);
+                          const variantKey = selectedVariant?.id || product.id;
+                          const isInRoom = isProductInRoom(room.id, product.id, variantKey);
+                          
+                          // Find what color variant (if any) is in this room
+                          const existingVariantInRoom = room.products?.find(p => p.id === product.id);
+                          const showColorInfo = existingVariantInRoom && existingVariantInRoom.color;
+                          
                           return (
                             <button
                               key={room.id}
                               className={`${styles.roomOption} ${isInRoom ? styles.roomOptionActive : ''}`}
                               onClick={() => {
+                                // Create product data object with variant-specific information
+                                const productData = {
+                                  id: product.id,
+                                  variantId: selectedVariant?.id || product.id,
+                                  name: product.name,
+                                  category: product.category,
+                                  color: selectedVariant?.color || null,
+                                  price: currentData.price,
+                                  image: currentData.image,
+                                  images: currentData.images || [currentData.image],
+                                  rating: currentData.rating,
+                                  reviewCount: currentData.reviewCount,
+                                  dimensions: currentData.dimensions,
+                                  inStock: currentData.inStock,
+                                  description: product.description,
+                                  features: product.features,
+                                  styles: product.styles,
+                                };
+                                
                                 if (isInRoom) {
-                                  removeProductFromRoom(room.id, product.id);
+                                  removeProductFromRoom(room.id, product.id, variantKey);
                                 } else {
-                                  addProductToRoom(room.id, product.id);
+                                  addProductToRoom(room.id, productData);
                                 }
                               }}
                             >
-                              <span className={styles.roomOptionName}>{room.name}</span>
-                              <span className={styles.roomOptionType}>{room.roomType}</span>
+                              <div>
+                                <span className={styles.roomOptionName}>{room.name}</span>
+                                <span className={styles.roomOptionType}>{room.roomType}</span>
+                                {showColorInfo && !isInRoom && (
+                                  <span className={styles.roomColorInfo}>• {existingVariantInRoom.color}</span>
+                                )}
+                              </div>
                               {isInRoom && (
                                 <svg className={styles.checkIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="20 6 9 17 4 12" />

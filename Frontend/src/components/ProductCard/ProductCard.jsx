@@ -12,6 +12,12 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
   const { openProductModal } = useProductModal();
   const { success } = useToast();
 
+  // Validate product data
+  if (!product || typeof product !== 'object' || !product.id || !product.name) {
+    console.error('Invalid product data:', product);
+    return null;
+  }
+
   const handleCardClick = () => {
     trackProductClick(product);
     openProductModal(product);
@@ -24,16 +30,18 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
   };
 
   const renderStars = (rating) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    // Validate rating to prevent invalid array lengths
+    const validRating = typeof rating === 'number' && !isNaN(rating) && rating >= 0 && rating <= 5 ? rating : 0;
+    const fullStars = Math.floor(validRating);
+    const hasHalfStar = validRating % 1 >= 0.5;
+    const emptyStars = Math.max(0, 5 - fullStars - (hasHalfStar ? 1 : 0));
 
     return (
       <>
         {Array(fullStars).fill('★').map((star, i) => (
           <span key={`full-${i}`}>{star}</span>
         ))}
-        {hasHalfStar && <span>½</span>}
+        {hasHalfStar && <span key="half">½</span>}
         {Array(emptyStars).fill('☆').map((star, i) => (
           <span key={`empty-${i}`}>{star}</span>
         ))}

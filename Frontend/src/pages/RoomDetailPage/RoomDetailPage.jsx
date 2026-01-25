@@ -64,9 +64,8 @@ const RoomDetailPage = () => {
     );
   }
 
-  const roomProducts = products.filter(product => 
-    room.products?.includes(product.id)
-  );
+  // Get room products - now stored as full objects with variant data
+  const roomProducts = room.products || [];
 
   const productCategories = [...new Set(roomProducts.map(p => p.category))];
 
@@ -74,9 +73,9 @@ const RoomDetailPage = () => {
     ? roomProducts 
     : roomProducts.filter(p => p.category === activeCategory);
 
-  const handleRemoveProduct = (e, productId) => {
+  const handleRemoveProduct = (e, productId, variantId = null) => {
     e.stopPropagation();
-    removeProductFromRoom(roomId, productId);
+    removeProductFromRoom(roomId, productId, variantId);
   };
 
   const formatDimensions = () => {
@@ -300,13 +299,13 @@ const RoomDetailPage = () => {
                 className={styles.productSwiper}
               >
                 {filteredProducts.map((product) => (
-                  <SwiperSlide key={product.id}>
+                  <SwiperSlide key={product.variantId || product.id}>
                     <div className={styles.productCard}>
                       {/* ProductCard should not render favorite/heart button in this context */}
                       <ProductCard product={product} hideFavorite />
                       <button
                         className={styles.removeButton}
-                        onClick={(e) => handleRemoveProduct(e, product.id)}
+                        onClick={(e) => handleRemoveProduct(e, product.id, product.variantId)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M18 6L6 18M6 6l12 12"/>

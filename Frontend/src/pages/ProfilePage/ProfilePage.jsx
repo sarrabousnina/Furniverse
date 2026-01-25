@@ -21,7 +21,7 @@ const ProfilePage = () => {
     roomCount: rooms.length,
     totalItems: rooms.reduce((sum, r) => sum + (r.products?.length || 0), 0),
     totalValue: rooms.reduce((sum, r) => {
-      const roomProducts = products.filter(p => r.products?.includes(p.id));
+      const roomProducts = r.products || [];
       return sum + roomProducts.reduce((pSum, p) => pSum + p.price, 0);
     }, 0)
   };
@@ -312,7 +312,7 @@ const ProfilePage = () => {
                             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                           </svg>
                           <span>{(() => {
-                            const roomProducts = products.filter(p => room.products?.includes(p.id));
+                            const roomProducts = room.products || [];
                             const totalValue = roomProducts.reduce((sum, p) => sum + p.price, 0);
                             return formatPrice(totalValue, 'TND', 0);
                           })()}</span>

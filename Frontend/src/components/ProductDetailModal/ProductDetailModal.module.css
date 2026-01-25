@@ -617,8 +617,16 @@
   font-size: 0.8rem;
   color: var(--color-text-secondary, #6B6B6B);
   padding: 4px 10px;
-  background: var(--color-bg, #F5F3EF);
-  border-radius: 20px;
+  background: transparent;
+  border-radius: 0;
+}
+
+.roomColorInfo {
+  font-size: 0.75rem;
+  color: var(--color-accent, #0D4D4D);
+  font-style: italic;
+  margin-left: 6px;
+  opacity: 0.8;
 }
 
 .checkIcon {
