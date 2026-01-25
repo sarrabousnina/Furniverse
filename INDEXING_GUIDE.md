@@ -5,18 +5,21 @@ Complete guide to indexing your products, users, and rooms into Qdrant for multi
 ## 🎯 What Gets Indexed
 
 ### Products (Multimodal Features)
+
 - ✅ **CLIP Text Embeddings** (512d) - Semantic text search
-- ✅ **CLIP Image Embeddings** (512d) - Visual similarity search  
+- ✅ **CLIP Image Embeddings** (512d) - Visual similarity search
 - ✅ **Color Palette Features** (548d) - RGB + HSV color-based filtering
 - ✅ **Graph Embeddings** (256d) - Node2Vec for substitute discovery
 
 ### Users
+
 - ✅ **Preference Vector** (512d) - Aggregated from purchase/interaction history
 - ✅ **Graph Neighborhood** (256d) - Collaborative filtering patterns
 - ✅ **Budget Patterns** - Min/max/avg prices, spending habits
 - ✅ **Category/Style Preferences** - Favorite categories and styles
 
 ### Rooms
+
 - ✅ **Room Profile** (512d) - Aggregated product embeddings
 - ✅ **Color Palette** (548d) - Combined color scheme
 - ✅ **Style Coherence** - Uniformity score for room aesthetics
@@ -30,6 +33,7 @@ Complete guide to indexing your products, users, and rooms into Qdrant for multi
 1. **Install Qdrant** (Choose one):
 
    **Option A: Docker (Recommended)**
+
    ```powershell
    docker run -p 6333:6333 -p 6334:6334 -v ${PWD}/qdrant_storage:/qdrant/storage qdrant/qdrant
    ```
@@ -57,6 +61,7 @@ python index_qdrant.py
 ```
 
 **What it does:**
+
 1. Builds product similarity graph
 2. Computes Node2Vec graph embeddings (256d)
 3. Generates CLIP text + image embeddings (512d each)
@@ -64,11 +69,13 @@ python index_qdrant.py
 5. Indexes all features into Qdrant collection `products_multimodal`
 
 **⚠️ Note:** By default, it indexes the first **200 products** for demo purposes. Edit `index_qdrant.py` line 323 to change:
+
 ```python
 products_to_index = products[:200]  # Change number here
 ```
 
 **Expected Output:**
+
 ```
 ✓ Loaded 403 products
 ✓ Connected to Qdrant at localhost:6333
@@ -101,6 +108,7 @@ python index_profiles.py
 ```
 
 **What it does:**
+
 1. Builds user preference vectors from purchase/interaction history
 2. Computes graph neighborhood embeddings
 3. Extracts budget patterns (min/max/avg spending)
@@ -118,6 +126,7 @@ python build_graph.py
 ```
 
 **What it creates:**
+
 - `Data/processed/graphs/similarity_graph.gexf`
 - `Data/processed/graphs/category_graph.gexf`
 - `Data/processed/graphs/bipartite_graph.gexf`
@@ -172,6 +181,7 @@ Extracted from product images:
 ### Graph Embeddings (256 dimensions)
 
 Node2Vec embeddings capturing:
+
 - Product-to-product similarity
 - Category/style relationships
 - Price tier connections
@@ -219,12 +229,14 @@ graph_embeddings = self.graph_builder.compute_node2vec_embeddings(
 ### products_multimodal
 
 **Vectors:**
+
 - `text_clip`: 512d CLIP text embedding
 - `image_clip`: 512d CLIP image embedding
 - `color`: 548d color palette features
 - `graph`: 256d Node2Vec graph embedding
 
 **Payload:**
+
 ```json
 {
   "product_id": "12345",
@@ -244,10 +256,12 @@ graph_embeddings = self.graph_builder.compute_node2vec_embeddings(
 ### users
 
 **Vectors:**
+
 - `preference`: 512d preference vector
 - `graph_neighborhood`: 256d graph neighborhood
 
 **Payload:**
+
 ```json
 {
   "user_id": "user_0001",
@@ -255,7 +269,7 @@ graph_embeddings = self.graph_builder.compute_node2vec_embeddings(
   "budget_min": 10,
   "budget_max": 1200,
   "num_purchases": 15,
-  "favorite_categories": {"Sofas": 5, "Tables": 3}
+  "favorite_categories": { "Sofas": 5, "Tables": 3 }
 }
 ```
 
@@ -270,6 +284,7 @@ Failed to connect to Qdrant at localhost:6333
 ```
 
 **Solution:** Make sure Qdrant is running:
+
 ```powershell
 docker ps  # Check if Qdrant container is running
 # Or restart Qdrant
@@ -283,6 +298,7 @@ RuntimeError: CUDA out of memory
 ```
 
 **Solution:** Reduce batch size or number of products:
+
 ```python
 # Edit index_qdrant.py
 products_to_index = products[:50]  # Smaller batch
@@ -295,6 +311,7 @@ ModuleNotFoundError: No module named 'node2vec'
 ```
 
 **Solution:**
+
 ```powershell
 pip install node2vec networkx
 ```
@@ -309,7 +326,6 @@ After indexing:
    - Text search: "modern leather sofa under $500"
    - Image search: Upload sofa image, find similar
    - Color search: Find products with specific color palette
-   
 2. **Build Recommendation API**
    - Update Backend API with Qdrant search
    - Implement budget-aware recommendations
@@ -339,6 +355,7 @@ Pipeline/
 ```
 
 **Run Order:**
+
 1. `index_qdrant.py` → Index products with all features
 2. `index_profiles.py` → (Optional) Index users and rooms
 

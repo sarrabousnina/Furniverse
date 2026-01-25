@@ -20,12 +20,14 @@ QDRANT_API_KEY = "eyJh...5k0"  # Your API key
 ## 🚀 Quick Start
 
 ### 1. Test Your Connection
+
 ```powershell
 cd Pipeline
 python test_qdrant_connection.py
 ```
 
 **Expected output:**
+
 ```
 ✓ Connection successful!
 ✓ QDRANT CLOUD IS READY!
@@ -34,6 +36,7 @@ python test_qdrant_connection.py
 ---
 
 ### 2. Install Dependencies
+
 ```powershell
 # From project root
 uv sync
@@ -46,12 +49,14 @@ pip install -r requirements.txt
 ---
 
 ### 3. Run Indexing
+
 ```powershell
 cd Pipeline/indexing
 python index_qdrant.py
 ```
 
 This will:
+
 - ✅ Connect to your Qdrant Cloud
 - ✅ Create collections (products_multimodal, users, rooms)
 - ✅ Index products with CLIP + colors + graph embeddings
@@ -76,11 +81,13 @@ This will:
 ## 🔧 How It Works
 
 ### Before (Local Docker):
+
 ```python
 client = QdrantClient(host='localhost', port=6333)
 ```
 
 ### After (Cloud):
+
 ```python
 import qdrant_config
 client = QdrantClient(
@@ -99,31 +106,35 @@ All scripts automatically use your cloud credentials from `qdrant_config.py`.
 ✅ **Persistent storage** - Data survives restarts  
 ✅ **Accessible anywhere** - Internet connection only  
 ✅ **Free tier** - Perfect for hackathons  
-✅ **Auto-scaling** - Handles growth automatically  
+✅ **Auto-scaling** - Handles growth automatically
 
 ---
 
 ## 🎯 Usage Examples
 
 ### Test Connection
+
 ```powershell
 cd Pipeline
 python test_qdrant_connection.py
 ```
 
 ### Index Products
+
 ```powershell
 cd Pipeline/indexing
 python index_qdrant.py
 ```
 
 ### Index User Profiles
+
 ```powershell
 cd Pipeline/indexing
 python index_profiles.py
 ```
 
 ### Use in Your Code
+
 ```python
 import sys
 from pathlib import Path
@@ -153,11 +164,13 @@ results = client.search(
 ⚠️ **IMPORTANT:** Never commit `qdrant_config.py` to public GitHub!
 
 Add to `.gitignore`:
+
 ```
 Pipeline/qdrant_config.py
 ```
 
 For team sharing, use environment variables:
+
 ```python
 import os
 
@@ -170,28 +183,33 @@ QDRANT_API_KEY = os.getenv('QDRANT_API_KEY', 'your-default-key')
 ## 🐛 Troubleshooting
 
 ### Connection Failed
+
 ```
 ✗ Cannot connect to Qdrant Cloud
 ```
 
 **Solutions:**
+
 1. Check internet connection
 2. Verify URL and API key in `qdrant_config.py`
 3. Check Qdrant Cloud dashboard for cluster status
 
 ### Import Error
+
 ```
 ModuleNotFoundError: No module named 'qdrant_config'
 ```
 
 **Solution:**
 Make sure you're running from correct directory:
+
 ```powershell
 cd Pipeline/indexing  # For indexing scripts
 python index_qdrant.py
 ```
 
 ### Authentication Failed
+
 ```
 Error: Unauthorized
 ```

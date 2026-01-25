@@ -185,44 +185,49 @@
 
 ## 📊 Embedding Dimensions Breakdown
 
-| Feature Type | Dimensions | Purpose |
-|-------------|-----------|---------|
-| CLIP Text | 512 | Semantic text understanding |
-| CLIP Image | 512 | Visual similarity matching |
-| Color RGB | 15 | Dominant colors (5 × 3) |
-| Color HSV | 15 | Hue/Saturation/Value (5 × 3) |
-| Color Avg | 6 | Average RGB + HSV |
-| Color Histogram | 512 | Distribution (8³ bins) |
-| Graph Node2Vec | 256 | Product relationships |
-| **Total per Product** | **1,828** | **Complete multimodal profile** |
+| Feature Type          | Dimensions | Purpose                         |
+| --------------------- | ---------- | ------------------------------- |
+| CLIP Text             | 512        | Semantic text understanding     |
+| CLIP Image            | 512        | Visual similarity matching      |
+| Color RGB             | 15         | Dominant colors (5 × 3)         |
+| Color HSV             | 15         | Hue/Saturation/Value (5 × 3)    |
+| Color Avg             | 6          | Average RGB + HSV               |
+| Color Histogram       | 512        | Distribution (8³ bins)          |
+| Graph Node2Vec        | 256        | Product relationships           |
+| **Total per Product** | **1,828**  | **Complete multimodal profile** |
 
 ## 🎯 Search Strategies
 
 ### 1. **Exact Match** (Text + Price)
+
 ```python
 Search: text_clip + filter(price <= budget)
 Use: Direct user queries with budget
 ```
 
 ### 2. **Visual Similarity** (Image)
+
 ```python
 Search: image_clip
 Use: "Find similar to this image"
 ```
 
 ### 3. **Budget Substitutes** (Graph + Price)
+
 ```python
 Search: graph + filter(price <= budget)
 Use: "Cheaper alternatives with similar style"
 ```
 
 ### 4. **Color Matching** (Color Palette)
+
 ```python
 Search: color + filter(styles in user_preferences)
 Use: "Match my room colors"
 ```
 
 ### 5. **Hybrid** (All Features)
+
 ```python
 Search: 0.4*text_clip + 0.3*image_clip + 0.2*color + 0.1*graph
 Use: Best overall recommendations
@@ -252,12 +257,12 @@ python index_profiles.py       # Index users/rooms
 
 ## 📈 Performance Metrics
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Indexing Speed | ~50-100 products/min | With CLIP + colors + graph |
-| Search Latency | <50ms | Vector search in Qdrant |
-| Storage | ~2KB per product | All embeddings + metadata |
-| Accuracy | 85-92% | Similarity score on test set |
+| Metric         | Value                | Notes                        |
+| -------------- | -------------------- | ---------------------------- |
+| Indexing Speed | ~50-100 products/min | With CLIP + colors + graph   |
+| Search Latency | <50ms                | Vector search in Qdrant      |
+| Storage        | ~2KB per product     | All embeddings + metadata    |
+| Accuracy       | 85-92%               | Similarity score on test set |
 
 ## 🎓 Learning Resources
 
