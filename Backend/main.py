@@ -20,8 +20,21 @@ class Dimensions(BaseModel):
     diameter: Optional[int] = None
 
 
+class ColorVariant(BaseModel):
+    """Color variant with all variant-specific metadata"""
+    id: int
+    color: str
+    price: int
+    rating: float
+    reviewCount: int
+    image: str
+    images: List[str]
+    inStock: bool
+    dimensions: Dimensions
+
+
 class Product(BaseModel):
-    """Frontend-compatible product model"""
+    """Frontend-compatible product model with color variants"""
     id: int
     name: str
     category: str
@@ -38,6 +51,7 @@ class Product(BaseModel):
     dimensions: Dimensions
     inStock: bool
     trending: bool = False
+    variants: List[ColorVariant] = []
 
 
 class RecommendRequest(BaseModel):
@@ -188,18 +202,22 @@ class CSVProductRepository(ProductRepository):
         # Split pipe-delimited strings into arrays
         images = row['images'].split('|') if pd.notna(row.get('images')) and row['images'] else [row['image']]
         features = row['features'].split('|') if pd.notna(row.get('features')) and row['features'] else []
-        styles = row['styles'].split('|') if pd.notna(row.get('styles')) and row['styles'] else []
+        # Styles are comma-separated in CSV, split and clean them
+        styles_raw = row.get('styles', '')
+        styles = [s.strip() for s in str(styles_raw).split(',') if s.strip()] if pd.notna(styles_raw) and styles_raw else []
         tags = row['tags'].split('|') if pd.notna(row.get('tags')) and row['tags'] else []
         
-        # Colors: wrap single value in array
-        colors = [row['colors']] if pd.notna(row.get('colors')) and row['colors'] else []
+        # Colors: split comma-separated values
+        colors_raw = row.get('colors', '')
+        colors = [c.strip() for c in str(colors_raw).split(',') if c.strip()] if pd.notna(colors_raw) and colors_raw else []
         
         # Map category to frontend category (strip whitespace for clean matching)
         raw_category = str(row['category']).strip()
         category = CATEGORY_MAP.get(raw_category, raw_category)
         
         # Convert string booleans to actual booleans
-        in_stock = str(row.get('inStock', 'True')).lower() == 'true'
+        # Note: inStock column no longer exists in new CSV, default to True
+        in_stock = True
         trending = str(row.get('trending', 'False')).lower() == 'true'
         
         return Product(
@@ -221,28 +239,77 @@ class CSVProductRepository(ProductRepository):
             trending=trending
         )
     
+    def _group_products_by_name(self) -> List[Product]:
+        """Group products by name, treating different colors as variants"""
+        grouped = {}
+        
+        for product in self.products:
+            # Use name as the grouping key
+            key = product.name.strip()
+            
+            if key not in grouped:
+                # First variant becomes the base product
+                grouped[key] = product
+                grouped[key].variants = []
+            
+            # Create variant for this color
+            variant = ColorVariant(
+                id=product.id,
+                color=product.colors[0] if product.colors else "default",
+                price=product.price,
+                rating=product.rating,
+                reviewCount=product.reviewCount,
+                image=product.image,
+                images=product.images,
+                inStock=product.inStock,
+                dimensions=product.dimensions
+            )
+            grouped[key].variants.append(variant)
+        
+        # Update the colors list to include all variant colors
+        for product in grouped.values():
+            product.colors = [v.color for v in product.variants]
+        
+        return list(grouped.values())
+    
     def get_all(self) -> List[Product]:
-        """Get all products"""
-        return self.products
+        """Get all products (grouped by name with color variants)"""
+        return self._group_products_by_name()
     
     def get_by_id(self, product_id: int) -> Optional[Product]:
-        """Get product by ID"""
+        """Get product by ID (returns grouped product with all variants)"""
+        # First find which ungrouped product matches the ID
+        matching_product = None
         for product in self.products:
             if product.id == product_id:
-                return product
+                matching_product = product
+                break
+        
+        if not matching_product:
+            return None
+        
+        # Find the grouped product that contains this variant
+        grouped_products = self._group_products_by_name()
+        for grouped in grouped_products:
+            # Check if any variant has this ID
+            if any(v.id == product_id for v in grouped.variants):
+                return grouped
+        
         return None
     
     def get_by_category(self, category: str) -> List[Product]:
-        """Get products by category (case-insensitive)"""
+        """Get products by category (case-insensitive, grouped by name)"""
         category_lower = category.lower()
-        return [p for p in self.products if p.category.lower() == category_lower]
+        grouped_products = self._group_products_by_name()
+        return [p for p in grouped_products if p.category.lower() == category_lower]
     
     def search(self, query: str) -> List[Product]:
-        """Simple text search - placeholder for future vector search"""
+        """Simple text search - placeholder for future vector search (grouped by name)"""
         query_lower = query.lower()
         results = []
+        grouped_products = self._group_products_by_name()
         
-        for product in self.products:
+        for product in grouped_products:
             # Search in name, description, tags, styles
             searchable = f"{product.name} {product.description} {' '.join(product.tags)} {' '.join(product.styles)}".lower()
             if query_lower in searchable:
@@ -273,7 +340,7 @@ repository: Optional[ProductRepository] = None
 async def startup_event():
     """Initialize data repository on startup"""
     global repository
-    csv_path = Path(__file__).parent / "data" / "dataset.csv"
+    csv_path = Path(__file__).parent.parent / "Data" / "processed" / "products.csv"
     try:
         repository = CSVProductRepository(str(csv_path))
         print(f"✓ Repository initialized with {len(repository.get_all())} products")

@@ -21,6 +21,7 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
 
   const activeRoom = getActiveRoom();
 
@@ -43,6 +44,10 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
         if (productData) {
           console.log('Product data loaded:', productData);
           setProduct(productData);
+          // Initialize with first variant if variants exist
+          if (productData.variants && productData.variants.length > 0) {
+            setSelectedVariant(productData.variants[0]);
+          }
           trackProductView(productData);
         } else {
           console.log('Product not found');
@@ -113,8 +118,23 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
   }
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
-    success(`${quantity > 1 ? `${quantity}x ` : ''}${product.name} successfully added to cart!`);
+    // Create cart item with variant-specific data
+    const cartItem = {
+      id: product.id,
+      variantId: selectedVariant?.id || product.id, // Unique variant identifier
+      name: product.name,
+      color: selectedVariant?.color || product.colors?.[0] || null,
+      price: currentData.price,
+      image: currentData.image,
+      category: product.category,
+      inStock: currentData.inStock,
+      // Include all necessary fields for cart display
+      rating: currentData.rating,
+      reviewCount: currentData.reviewCount,
+    };
+    
+    addToCart(cartItem, quantity);
+    success(`${quantity > 1 ? `${quantity}x ` : ''}${product.name}${cartItem.color ? ` (${cartItem.color})` : ''} successfully added to cart!`);
   };
 
   const renderStars = (rating) => {
@@ -198,6 +218,37 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
     );
   };
 
+  // Get current display data based on selected variant
+  const getCurrentData = () => {
+    if (!product) return null;
+    
+    // If no variants or variant not selected, use base product data
+    if (!product.variants || product.variants.length === 0 || !selectedVariant) {
+      return {
+        price: product.price,
+        rating: product.rating,
+        reviewCount: product.reviewCount,
+        image: product.image,
+        images: product.images,
+        dimensions: product.dimensions,
+        inStock: product.inStock
+      };
+    }
+    
+    // Use selected variant data
+    return {
+      price: selectedVariant.price,
+      rating: selectedVariant.rating,
+      reviewCount: selectedVariant.reviewCount,
+      image: selectedVariant.image,
+      images: selectedVariant.images,
+      dimensions: selectedVariant.dimensions,
+      inStock: selectedVariant.inStock
+    };
+  };
+
+  const currentData = getCurrentData();
+
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -223,13 +274,13 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
             {/* Gallery */}
             <div className={styles.gallery}>
               <img
-                src={product.images?.[selectedImage] || product.image}
+                src={currentData?.images?.[selectedImage] || currentData?.image || product.image}
                 alt={product.name}
                 className={styles.mainImage}
               />
-              {product.images && product.images.length > 1 && (
+              {currentData?.images && currentData.images.length > 1 && (
                 <div className={styles.thumbnails}>
-                  {product.images.map((img, idx) => (
+                  {currentData.images.map((img, idx) => (
                     <img
                       key={idx}
                       src={img}
@@ -250,14 +301,40 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
               <div className={styles.productHeaderGroup}>
                 <div className={styles.category}>{product.category || 'Uncategorized'}</div>
                 <h1 className={styles.title}>{product.name || 'Product'}</h1>
-                <div className={styles.price}>${(product.price || 0).toLocaleString()}</div>
+                <div className={styles.price}>${(currentData?.price || 0).toLocaleString()}</div>
                 <div className={styles.rating}>
-                  <div className={styles.stars}>{renderStars(product.rating || 0)}</div>
+                  <div className={styles.stars}>{renderStars(currentData?.rating || 0)}</div>
                   <span className={styles.ratingText}>
-                    {product.rating || 0} ({product.reviewCount || 0} reviews)
+                    {currentData?.rating || 0} ({currentData?.reviewCount || 0} reviews)
                   </span>
                 </div>
               </div>
+              
+              {/* Color Variants Selector */}
+              {product.variants && product.variants.length > 1 && (
+                <div className={styles.colorSection}>
+                  <h3 className={styles.colorTitle}>
+                    Color: <span className={styles.selectedColor}>{selectedVariant?.color || 'Select'}</span>
+                  </h3>
+                  <div className={styles.colorOptions}>
+                    {product.variants.map((variant) => (
+                      <button
+                        key={variant.id}
+                        className={`${styles.colorButton} ${selectedVariant?.id === variant.id ? styles.active : ''}`}
+                        onClick={() => {
+                          setSelectedVariant(variant);
+                          setSelectedImage(0); // Reset to first image when changing color
+                        }}
+                        title={variant.color}
+                        aria-label={`Select ${variant.color}`}
+                      >
+                        {variant.color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {rooms.length > 0 && (
                 <div className={styles.addToRoomSection}>
                   <div className={styles.addToRoomHeader}>
@@ -325,11 +402,22 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
                 </div>
               )}
 
-              {product.dimensions && (
+              {product.styles && product.styles.length > 0 && (
+                <div className={styles.stylesSection}>
+                  <h3 className={styles.stylesTitle}>Style</h3>
+                  <div className={styles.stylesList}>
+                    {product.styles.map((style, idx) => (
+                      <span key={idx} className={styles.styleTag}>{style}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {currentData?.dimensions && (
                 <div className={styles.dimensions}>
                   <h3 className={styles.dimensionsTitle}>Dimensions</h3>
                   <div className={styles.dimensionsList}>
-                    {formatDimensions(product.dimensions)}
+                    {formatDimensions(currentData.dimensions)}
                   </div>
                 </div>
               )}

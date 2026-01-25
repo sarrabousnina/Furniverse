@@ -20,10 +20,18 @@ const ShopPage = () => {
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [sortBy, setSortBy] = useState('featured');
 
-  // Get all unique styles
+  // Get all unique styles (split comma-separated and flatten)
   const allStyles = useMemo(() => {
     const styles = new Set();
-    products.forEach(p => p.styles?.forEach(s => styles.add(s)));
+    products.forEach(p => {
+      if (p.styles && Array.isArray(p.styles)) {
+        p.styles.forEach(s => {
+          // Split by comma in case backend sends combined styles
+          const individualStyles = s.split(',').map(style => style.trim()).filter(Boolean);
+          individualStyles.forEach(style => styles.add(style));
+        });
+      }
+    });
     return Array.from(styles).sort();
   }, [products]);
 
@@ -56,19 +64,29 @@ const ShopPage = () => {
       );
     }
 
-    // Filter by styles
+    // Filter by styles (handle both array and comma-separated)
     if (selectedStyles.length > 0) {
-      productsList = productsList.filter(p =>
-        p.styles?.some(s => selectedStyles.includes(s.toLowerCase()))
-      );
+      productsList = productsList.filter(p => {
+        if (!p.styles || !Array.isArray(p.styles)) return false;
+        // Flatten all product styles (split any comma-separated ones)
+        const productStyles = p.styles.flatMap(s => 
+          s.split(',').map(style => style.trim().toLowerCase())
+        ).filter(Boolean);
+        // Check if any selected style matches
+        return selectedStyles.some(selected => productStyles.includes(selected.toLowerCase()));
+      });
     }
 
     // Filter by price range
+    const getMinPrice = (p) =>
+      p.variants && p.variants.length > 0
+        ? Math.min(...p.variants.map(v => v.price))
+        : p.price;
     if (priceRange.min) {
-      productsList = productsList.filter(p => p.price >= parseInt(priceRange.min));
+      productsList = productsList.filter(p => getMinPrice(p) >= parseInt(priceRange.min));
     }
     if (priceRange.max) {
-      productsList = productsList.filter(p => p.price <= parseInt(priceRange.max));
+      productsList = productsList.filter(p => getMinPrice(p) <= parseInt(priceRange.max));
     }
 
     // Sort products
@@ -103,10 +121,11 @@ const ShopPage = () => {
 
   // Toggle style filter
   const toggleStyle = (style) => {
+    const styleLower = style.toLowerCase();
     setSelectedStyles(prev =>
-      prev.includes(style)
-        ? prev.filter(s => s !== style)
-        : [...prev, style]
+      prev.includes(styleLower)
+        ? prev.filter(s => s !== styleLower)
+        : [...prev, styleLower]
     );
   };
 
@@ -159,6 +178,23 @@ const ShopPage = () => {
             <div className={styles.filterGroup}>
               <h3 className={styles.filterTitle}>Categories</h3>
               <div className={styles.filterOptions}>
+                {/* All Categories Option */}
+                <div
+                  key="all"
+                  className={styles.filterOption}
+                  onClick={() => setSelectedCategories([])}
+                >
+                  <div
+                    className={`${styles.filterCheckbox} ${selectedCategories.length === 0 ? styles.checked : ''}`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" strokeWidth="3">
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  </div>
+                  <span className={styles.filterLabel}>All</span>
+                  <span className={styles.filterCount}>{products.length}</span>
+                </div>
+
                 {CATEGORIES.filter(c => c.id !== 'all').map(cat => (
                   <div
                     key={cat.id}

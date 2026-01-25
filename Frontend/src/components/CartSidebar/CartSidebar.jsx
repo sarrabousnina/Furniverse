@@ -59,10 +59,13 @@ const CartSidebar = () => {
           ) : (
             <div className={styles.cartItems}>
               {cart.map(item => (
-                <div key={item.id} className={styles.cartItem}>
+                <div key={item.variantId || item.id} className={styles.cartItem}>
                   <img src={item.image} alt={item.name} className={styles.itemImage} />
                   <div className={styles.itemDetails}>
-                    <div className={styles.itemName}>{item.name}</div>
+                    <div className={styles.itemName}>
+                      {item.name}
+                      {item.color && <span className={styles.itemColor}> • {item.color}</span>}
+                    </div>
                     <div className={styles.itemPrice}>
                       ${item.price.toLocaleString()} × {item.quantity}
                     </div>
@@ -70,7 +73,7 @@ const CartSidebar = () => {
                       <div className={styles.quantityControls}>
                         <button
                           className={styles.quantityButton}
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.id, item.quantity - 1, item.variantId)}
                           aria-label="Decrease quantity"
                         >
                           −
@@ -78,7 +81,7 @@ const CartSidebar = () => {
                         <span className={styles.quantity}>{item.quantity}</span>
                         <button
                           className={styles.quantityButton}
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.id, item.quantity + 1, item.variantId)}
                           aria-label="Increase quantity"
                         >
                           +
@@ -86,7 +89,7 @@ const CartSidebar = () => {
                       </div>
                       <button
                         className={styles.removeButton}
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(item.id, item.variantId)}
                       >
                         Remove
                       </button>

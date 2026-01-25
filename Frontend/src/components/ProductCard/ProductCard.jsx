@@ -79,6 +79,15 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
           <span className={styles.reviewCount}>({product.reviewCount})</span>
         </div>
 
+        {/* Styles */}
+        {product.styles && product.styles.length > 0 && (
+          <div className={styles.styleTags}>
+            {product.styles.slice(0, 2).map((style, idx) => (
+              <span key={idx} className={styles.styleTag}>{style}</span>
+            ))}
+          </div>
+        )}
+
         {/* Match Reasons (for recommendations) */}
         {matchReasons.length > 0 && (
           <div className={styles.matchReasons}>
@@ -92,7 +101,16 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
 
         {/* Footer */}
         <div className={styles.footer}>
-          <div className={styles.price}>${product.price.toLocaleString()}</div>
+          <div className={styles.priceSection}>
+            {product.variants && product.variants.length > 1 ? (
+              <>
+                <div className={styles.priceLabel}>Starts from</div>
+                <div className={styles.price}>${Math.min(...product.variants.map(v => v.price)).toLocaleString()}</div>
+              </>
+            ) : (
+              <div className={styles.price}>${product.price.toLocaleString()}</div>
+            )}
+          </div>
           <button className={styles.addButton} onClick={handleAddToCart}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 5v14M5 12h14" />
@@ -100,6 +118,18 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
             Add
           </button>
         </div>
+
+        {/* Color Variants Indicator */}
+        {product.variants && product.variants.length > 1 && (
+          <div className={styles.colorIndicator}>
+            <span className={styles.colorDots}>
+              {product.variants.slice(0, 3).map((variant, idx) => (
+                <span key={idx} className={styles.colorDot} title={variant.color}></span>
+              ))}
+            </span>
+            <span className={styles.colorCount}>{product.variants.length} colors</span>
+          </div>
+        )}
       </div>
     </div>
   );

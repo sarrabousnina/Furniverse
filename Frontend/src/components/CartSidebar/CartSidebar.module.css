@@ -157,6 +157,13 @@
   font-size: 0.9375rem;
 }
 
+.itemColor {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--color-text-secondary, #6B6B6B);
+  text-transform: capitalize;
+}
+
 .itemPrice {
   color: var(--color-text-secondary, #6B6B6B);
   font-size: 0.875rem;
