@@ -58,11 +58,13 @@ function AppContent() {
       {/* Global Modals */}
       {isCartOpen && <CartSidebar />}
       {isAuthModalOpen && <AuthModal />}
-      <ProductDetailModal
-        product={selectedProduct}
-        isOpen={isModalOpen}
-        onClose={closeProductModal}
-      />
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={closeProductModal}
+        />
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { formatPrice } from '../../utils/currency';
 import styles from './CartSidebar.module.css';
 
 const CartSidebar = () => {
@@ -67,7 +68,7 @@ const CartSidebar = () => {
                       {item.color && <span className={styles.itemColor}> • {item.color}</span>}
                     </div>
                     <div className={styles.itemPrice}>
-                      ${item.price.toLocaleString()} × {item.quantity}
+                      {formatPrice(item.price, 'TND')} × {item.quantity}
                     </div>
                     <div className={styles.itemActions}>
                       <div className={styles.quantityControls}>
@@ -107,7 +108,7 @@ const CartSidebar = () => {
             <div className={styles.subtotal}>
               <span className={styles.subtotalLabel}>Subtotal</span>
               <span className={styles.subtotalAmount}>
-                ${cartTotal.toLocaleString()}
+                {formatPrice(cartTotal, 'TND')}
               </span>
             </div>
             <button className={styles.checkoutButton} onClick={handleCheckout}>

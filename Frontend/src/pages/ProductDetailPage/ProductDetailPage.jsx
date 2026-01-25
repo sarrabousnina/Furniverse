@@ -4,6 +4,7 @@ import { useProducts } from '../../context/ProductsContext';
 import { useCart } from '../../context/CartContext';
 import { useRooms } from '../../context/RoomsContext';
 import { getRecommendedProducts } from '../../utils/recommendations';
+import { formatPrice } from '../../utils/currency';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from './ProductDetailPage.module.css';
 
@@ -130,7 +131,7 @@ const ProductDetailPage = () => {
             </div>
 
             <div className={styles.price}>
-              ${product.price.toLocaleString()}
+              {formatPrice(product.price, 'TND')}
             </div>
 
             <p className={styles.description}>

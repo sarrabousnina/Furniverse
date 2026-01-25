@@ -3,6 +3,7 @@ import { useCart } from '../../context/CartContext';
 import { useProductModal } from '../../context/ProductModalContext';
 import { useToast } from '../../context/ToastContext';
 import { trackProductClick } from '../../utils/userTracking';
+import { formatPrice } from '../../utils/currency';
 import styles from './ProductCard.module.css';
 
 
@@ -105,10 +106,10 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
             {product.variants && product.variants.length > 1 ? (
               <>
                 <div className={styles.priceLabel}>Starts from</div>
-                <div className={styles.price}>${Math.min(...product.variants.map(v => v.price)).toLocaleString()}</div>
+                <div className={styles.price}>{formatPrice(Math.min(...product.variants.map(v => v.price)), 'TND')}</div>
               </>
             ) : (
-              <div className={styles.price}>${product.price.toLocaleString()}</div>
+              <div className={styles.price}>{formatPrice(product.price, 'TND')}</div>
             )}
           </div>
           <button className={styles.addButton} onClick={handleAddToCart}>

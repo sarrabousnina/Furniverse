@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import { trackProductView } from '../../utils/userTracking';
 import { fetchProductById } from '../../services/api';
+import { formatPrice } from '../../utils/currency';
 import ProductCard from '../ProductCard/ProductCard';
 import styles from './ProductDetailModal.module.css';
 
@@ -301,7 +302,7 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
               <div className={styles.productHeaderGroup}>
                 <div className={styles.category}>{product.category || 'Uncategorized'}</div>
                 <h1 className={styles.title}>{product.name || 'Product'}</h1>
-                <div className={styles.price}>${(currentData?.price || 0).toLocaleString()}</div>
+                <div className={styles.price}>{formatPrice(currentData?.price || 0, 'TND')}</div>
                 <div className={styles.rating}>
                   <div className={styles.stars}>{renderStars(currentData?.rating || 0)}</div>
                   <span className={styles.ratingText}>

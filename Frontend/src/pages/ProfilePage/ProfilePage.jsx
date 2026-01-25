@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useRooms } from '../../context/RoomsContext';
 import { useAuth } from '../../context/AuthContext';
 import { useProducts } from '../../context/ProductsContext';
+import { formatPrice } from '../../utils/currency';
 import RoomForm from '../../components/RoomForm/RoomForm';
 import styles from './ProfilePage.module.css';
 
@@ -150,7 +151,7 @@ const ProfilePage = () => {
                 </div>
                 <div className={styles.statDivider} />
                 <div className={styles.statInline}>
-                  <span className={styles.statNumber}>${userStats.totalValue.toLocaleString()}</span>
+                  <span className={styles.statNumber}>{formatPrice(userStats.totalValue, 'TND', 0)}</span>
                   <span className={styles.statText}>Value</span>
                 </div>
               </div>
@@ -310,16 +311,17 @@ const ProfilePage = () => {
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                           </svg>
-                          <span>${(() => {
-                            const roomProducts = PRODUCTS.filter(p => room.products?.includes(p.id));
-                            return roomProducts.reduce((sum, p) => sum + p.price, 0).toLocaleString();
+                          <span>{(() => {
+                            const roomProducts = products.filter(p => room.products?.includes(p.id));
+                            const totalValue = roomProducts.reduce((sum, p) => sum + p.price, 0);
+                            return formatPrice(totalValue, 'TND', 0);
                           })()}</span>
                         </div>
                         <div className={styles.roomStat}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                           </svg>
-                          <span>Budget ${room.budgetMax?.toLocaleString() || '0'}</span>
+                          <span>Budget {room.budgetMax ? formatPrice(room.budgetMax, 'TND', 0) : 'Not set'}</span>
                         </div>
                       </div>
                     </div>

@@ -7,6 +7,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import { useRooms } from '../../context/RoomsContext';
 import { useProducts } from '../../context/ProductsContext';
+import { formatPrice } from '../../utils/currency';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from './RoomDetailPage.module.css';
 
@@ -212,7 +213,7 @@ const RoomDetailPage = () => {
               </svg>
             </div>
             <div className={styles.statContent}>
-              <span className={styles.statValue}>${totalValue.toLocaleString()}</span>
+              <span className={styles.statValue}>{formatPrice(totalValue, 'TND', 0)}</span>
               <span className={styles.statLabel}>Total Value</span>
             </div>
           </div>
