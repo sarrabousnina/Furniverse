@@ -110,17 +110,6 @@ User Query → FastAPI → CLIP Encoding (512D)
 
 ---
 
-## 🧪 Testing
-
-```bash
-# Fusion search test
-cd Backend
-python test_fusion.py
-
-# Complete test suite
-python test_recommendations.py
-```
-
 **Example Output:**
 ```
 🔬 MULTIMODAL FUSION SEARCH
@@ -159,4 +148,5 @@ Top Products:
   <b>Built with ❤️ using AI, Vectors, and Graphs</b><br>
   <sub>Furniverse - Where AI meets furniture shopping</sub>
 </p>
+
 
