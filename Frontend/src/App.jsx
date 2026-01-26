@@ -6,6 +6,9 @@ import { RoomsProvider } from './context/RoomsContext';
 import { ProductModalProvider, useProductModal } from './context/ProductModalContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
+import { ProductsProvider } from './context/ProductsContext';
+import { DiscountProvider } from './context/DiscountContext';
+import { CustomProductsProvider } from './context/CustomProductsContext';
 
 // Pages
 import HomePage from './pages/HomePage/HomePage';
@@ -14,6 +17,7 @@ import ProductDetailPage from './pages/ProductDetailPage/ProductDetailPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import CheckoutPage from './pages/CheckoutPage/CheckoutPage';
 import RoomDetailPage from './pages/RoomDetailPage/RoomDetailPage';
+import AdminPage from './pages/AdminPage/AdminPage';
 
 // Components
 import Navigation from './components/Navigation/Navigation';
@@ -39,11 +43,13 @@ function AppContent() {
   const { isCartOpen } = useCart();
   const { isAuthModalOpen } = useAuth();
   const { selectedProduct, isModalOpen, closeProductModal } = useProductModal();
+  const location = useLocation();
+  const isAdminPage = location.pathname === '/admin';
 
   return (
     <>
       <ScrollToTop />
-      <Navigation />
+      {!isAdminPage && <Navigation />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
@@ -51,17 +57,20 @@ function AppContent() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/room/:roomId" element={<RoomDetailPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       {/* Global Modals */}
       {isCartOpen && <CartSidebar />}
       {isAuthModalOpen && <AuthModal />}
-      <ProductDetailModal
-        product={selectedProduct}
-        isOpen={isModalOpen}
-        onClose={closeProductModal}
-      />
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={closeProductModal}
+        />
+      )}
     </>
   );
 }
@@ -71,16 +80,22 @@ function App() {
     <Router>
       <ThemeProvider>
         <ToastProvider>
-          <AuthProvider>
-            <CartProvider>
-              <RoomsProvider>
-                <ProductModalProvider>
-                  <AppContent />
-                  <ToastContainer />
-                </ProductModalProvider>
-              </RoomsProvider>
-            </CartProvider>
-          </AuthProvider>
+          <DiscountProvider>
+            <CustomProductsProvider>
+              <AuthProvider>
+                <ProductsProvider>
+                  <CartProvider>
+                    <RoomsProvider>
+                      <ProductModalProvider>
+                        <AppContent />
+                        <ToastContainer />
+                      </ProductModalProvider>
+                    </RoomsProvider>
+                  </CartProvider>
+                </ProductsProvider>
+              </AuthProvider>
+            </CustomProductsProvider>
+          </DiscountProvider>
         </ToastProvider>
       </ThemeProvider>
     </Router>

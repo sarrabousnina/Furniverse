@@ -6,7 +6,8 @@ import { Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import { useRooms } from '../../context/RoomsContext';
-import { PRODUCTS } from '../../data/products';
+import { useProducts } from '../../context/ProductsContext';
+import { formatPrice } from '../../utils/currency';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from './RoomDetailPage.module.css';
 
@@ -14,9 +15,31 @@ const RoomDetailPage = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { getRoomById, removeProductFromRoom } = useRooms();
+  const { products, loading, error } = useProducts();
   const [activeCategory, setActiveCategory] = useState('all');
 
   const room = getRoomById(roomId);
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+          <p>Loading room...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div style={{ textAlign: 'center', padding: '100px 0', color: 'red' }}>
+          <p>Error loading products: {error}</p>
+          <p>Please make sure the backend server is running at http://localhost:8000</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!room) {
     return (
@@ -41,9 +64,8 @@ const RoomDetailPage = () => {
     );
   }
 
-  const roomProducts = PRODUCTS.filter(product => 
-    room.products?.includes(product.id)
-  );
+  // Get room products - now stored as full objects with variant data
+  const roomProducts = room.products || [];
 
   const productCategories = [...new Set(roomProducts.map(p => p.category))];
 
@@ -51,9 +73,9 @@ const RoomDetailPage = () => {
     ? roomProducts 
     : roomProducts.filter(p => p.category === activeCategory);
 
-  const handleRemoveProduct = (e, productId) => {
+  const handleRemoveProduct = (e, productId, variantId = null) => {
     e.stopPropagation();
-    removeProductFromRoom(roomId, productId);
+    removeProductFromRoom(roomId, productId, variantId);
   };
 
   const formatDimensions = () => {
@@ -190,7 +212,7 @@ const RoomDetailPage = () => {
               </svg>
             </div>
             <div className={styles.statContent}>
-              <span className={styles.statValue}>${totalValue.toLocaleString()}</span>
+              <span className={styles.statValue}>{formatPrice(totalValue, 'TND', 0)}</span>
               <span className={styles.statLabel}>Total Value</span>
             </div>
           </div>
@@ -277,13 +299,13 @@ const RoomDetailPage = () => {
                 className={styles.productSwiper}
               >
                 {filteredProducts.map((product) => (
-                  <SwiperSlide key={product.id}>
+                  <SwiperSlide key={product.variantId || product.id}>
                     <div className={styles.productCard}>
                       {/* ProductCard should not render favorite/heart button in this context */}
                       <ProductCard product={product} hideFavorite />
                       <button
                         className={styles.removeButton}
-                        onClick={(e) => handleRemoveProduct(e, product.id)}
+                        onClick={(e) => handleRemoveProduct(e, product.id, product.variantId)}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M18 6L6 18M6 6l12 12"/>

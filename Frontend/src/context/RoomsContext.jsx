@@ -13,7 +13,21 @@ export const useRooms = () => {
 export const RoomsProvider = ({ children }) => {
   const [rooms, setRooms] = useState(() => {
     const savedRooms = localStorage.getItem('furniverse_rooms');
-    return savedRooms ? JSON.parse(savedRooms) : [];
+    if (!savedRooms) return [];
+    
+    try {
+      const parsed = JSON.parse(savedRooms);
+      // Migrate old data: filter out invalid products (legacy IDs instead of objects)
+      return parsed.map(room => ({
+        ...room,
+        products: (room.products || []).filter(p => 
+          typeof p === 'object' && p !== null && p.id && p.name
+        )
+      }));
+    } catch (e) {
+      console.error('Failed to parse rooms from localStorage:', e);
+      return [];
+    }
   });
 
   useEffect(() => {
@@ -25,7 +39,7 @@ export const RoomsProvider = ({ children }) => {
       ...roomData,
       id: Date.now().toString(),
       createdAt: new Date().toISOString(),
-      products: [], // Array to store assigned product IDs
+      products: [], // Array to store product variant objects with full metadata
     };
     setRooms(prev => [...prev, newRoom]);
     return newRoom;
@@ -51,16 +65,23 @@ export const RoomsProvider = ({ children }) => {
     return rooms.find(room => room.id === roomId) || null;
   };
 
-  const addProductToRoom = (roomId, productId) => {
+  const addProductToRoom = (roomId, productData) => {
     setRooms(prev =>
       prev.map(room => {
         if (room.id === roomId) {
-          if (room.products && room.products.includes(productId)) {
+          const products = room.products || [];
+          // Check if this exact variant is already in the room
+          const variantKey = productData.variantId || productData.id;
+          const exists = products.some(p => (p.variantId || p.id) === variantKey);
+          
+          if (exists) {
             return room;
           }
+          
+          // Store full product/variant data including color, price, images, metadata
           return {
             ...room,
-            products: [...(room.products || []), productId]
+            products: [...products, productData]
           };
         }
         return room;
@@ -68,13 +89,17 @@ export const RoomsProvider = ({ children }) => {
     );
   };
 
-  const removeProductFromRoom = (roomId, productId) => {
+  const removeProductFromRoom = (roomId, productId, variantId = null) => {
     setRooms(prev =>
       prev.map(room => {
         if (room.id === roomId) {
           return {
             ...room,
-            products: (room.products || []).filter(id => id !== productId)
+            products: (room.products || []).filter(p => {
+              const key = variantId || productId;
+              const productKey = p.variantId || p.id;
+              return productKey !== key;
+            })
           };
         }
         return room;
@@ -82,9 +107,12 @@ export const RoomsProvider = ({ children }) => {
     );
   };
 
-  const isProductInRoom = (roomId, productId) => {
+  const isProductInRoom = (roomId, productId, variantId = null) => {
     const room = rooms.find(r => r.id === roomId);
-    return room?.products?.includes(productId) || false;
+    if (!room?.products) return false;
+    
+    const key = variantId || productId;
+    return room.products.some(p => (p.variantId || p.id) === key);
   };
 
   return (

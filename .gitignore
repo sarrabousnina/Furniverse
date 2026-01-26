@@ -59,3 +59,6 @@ lerna-debug.log*
 .vite
 
 Data/raw/images
+
+__pycache__/
+*.pyc

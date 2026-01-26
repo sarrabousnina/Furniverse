@@ -78,6 +78,24 @@
   padding: var(--spacing-lg, 24px) var(--spacing-xl, 32px);
 }
 
+/* Make scrollbar transparent */
+.content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .emptyState {
   text-align: center;
   padding: var(--spacing-2xl, 48px) var(--spacing-lg, 24px);
@@ -155,6 +173,13 @@
   color: var(--color-text-primary, #1A1A1A);
   margin-bottom: var(--spacing-xs, 4px);
   font-size: 0.9375rem;
+}
+
+.itemColor {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--color-text-secondary, #6B6B6B);
+  text-transform: capitalize;
 }
 
 .itemPrice {

@@ -1,10 +1,11 @@
 import React from 'react';
+import { formatPrice } from '../../utils/currency';
 import styles from './RoomCard.module.css';
 
 const RoomCard = ({ room, onEdit, onDelete }) => {
   const formatBudget = (amount) => {
     if (!amount) return 'Not specified';
-    return `$${amount.toLocaleString()}`;
+    return formatPrice(amount, 'TND', 0);
   };
 
   const formatSize = (size) => {

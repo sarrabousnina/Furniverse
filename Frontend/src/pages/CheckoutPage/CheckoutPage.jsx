@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { formatPrice, convertToTND } from '../../utils/currency';
 import styles from './CheckoutPage.module.css';
 
 const CheckoutPage = () => {
@@ -15,9 +16,9 @@ const CheckoutPage = () => {
     navigate('/');
   };
 
-  // Calculate totals
-  const subtotal = cartTotal;
-  const shipping = subtotal > 500 ? 0 : 49;
+  // Calculate totals in TND
+  const subtotal = convertToTND(cartTotal);
+  const shipping = cartTotal > 500 ? 0 : convertToTND(49); // Free shipping over $500 (1445 TND)
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
@@ -175,12 +176,12 @@ const CheckoutPage = () => {
               </div>
 
               <button type="submit" className={styles.checkoutButton}>
-                Place Order • ${total.toLocaleString()}
+                Place Order • {formatPrice(total, 'TND', 2)}
               </button>
 
               <div className={styles.trustBadges}>
                 <div className={styles.trustBadge}>🔒 Secure Checkout</div>
-                <div className={styles.trustBadge}>✓ Free Shipping Over $500</div>
+                <div className={styles.trustBadge}>✓ Free Shipping Over {formatPrice(500, 'TND', 0)}</div>
                 <div className={styles.trustBadge}>↩️ 30-Day Returns</div>
               </div>
             </form>
@@ -199,7 +200,7 @@ const CheckoutPage = () => {
                     <div className={styles.itemMeta}>Qty: {item.quantity}</div>
                   </div>
                   <div className={styles.itemPrice}>
-                    ${(item.price * item.quantity).toLocaleString()}
+                    {formatPrice(convertToTND(item.price * item.quantity), 'TND', 2)}
                   </div>
                 </div>
               ))}
@@ -207,21 +208,21 @@ const CheckoutPage = () => {
 
             <div className={styles.summaryRow}>
               <span className={styles.label}>Subtotal</span>
-              <span className={styles.value}>${subtotal.toLocaleString()}</span>
+              <span className={styles.value}>{formatPrice(subtotal, 'TND', 2)}</span>
             </div>
             <div className={styles.summaryRow}>
               <span className={styles.label}>Shipping</span>
               <span className={styles.value}>
-                {shipping === 0 ? 'FREE' : `$${shipping.toLocaleString()}`}
+                {shipping === 0 ? 'FREE' : formatPrice(shipping, 'TND', 2)}
               </span>
             </div>
             <div className={styles.summaryRow}>
               <span className={styles.label}>Tax (8%)</span>
-              <span className={styles.value}>${tax.toFixed(2)}</span>
+              <span className={styles.value}>{formatPrice(tax, 'TND', 2)}</span>
             </div>
             <div className={`${styles.summaryRow} ${styles.summaryRowTotal}`}>
               <span className={styles.label}>Total</span>
-              <span className={styles.totalValue}>${total.toFixed(2)}</span>
+              <span className={styles.totalValue}>{formatPrice(total, 'TND', 2)}</span>
             </div>
           </div>
         </div>

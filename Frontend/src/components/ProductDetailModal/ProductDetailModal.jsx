@@ -1,45 +1,143 @@
 import React, { useState, useEffect } from 'react';
-import { getRelatedProducts } from '../../data/products';
+import { useProducts } from '../../context/ProductsContext';
 import { useCart } from '../../context/CartContext';
 import { useRooms } from '../../context/RoomsContext';
 import { useToast } from '../../context/ToastContext';
+import { useDiscounts } from '../../context/DiscountContext';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import { trackProductView } from '../../utils/userTracking';
+import { fetchProductById } from '../../services/api';
+import { formatPrice } from '../../utils/currency';
 import ProductCard from '../ProductCard/ProductCard';
 import styles from './ProductDetailModal.module.css';
 
-const ProductDetailModal = ({ product, isOpen, onClose }) => {
+const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
   const { addToCart } = useCart();
   const { rooms, getActiveRoom, addProductToRoom, removeProductFromRoom, isProductInRoom } = useRooms();
   const { success } = useToast();
+  const { getRelatedProducts } = useProducts();
+  const { hasDiscount, getDiscount, getDiscountedPrice } = useDiscounts();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showRoomDropdown, setShowRoomDropdown] = useState(false);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
 
   const activeRoom = getActiveRoom();
 
-  // Track product view when modal opens
+  // Fetch full product details from backend when modal opens
   useEffect(() => {
-    if (isOpen && product) {
-      trackProductView(product);
-    }
-  }, [isOpen, product]);
+    const loadProduct = async () => {
+      console.log('Modal opened with product:', productProp);
+      if (!isOpen || !productProp?.id) {
+        console.log('No product or modal closed');
+        setProduct(null);
+        return;
+      }
 
-  if (!product || !isOpen) return null;
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('Fetching product details for ID:', productProp.id);
+        const productData = await fetchProductById(productProp.id);
+        
+        if (productData) {
+          console.log('Product data loaded:', productData);
+          setProduct(productData);
+          // Initialize with first variant if variants exist
+          if (productData.variants && productData.variants.length > 0) {
+            setSelectedVariant(productData.variants[0]);
+          }
+          trackProductView(productData);
+        } else {
+          console.log('Product not found');
+          setError('Product not found');
+        }
+      } catch (err) {
+        console.error('Error loading product details:', err);
+        setError('Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const relatedProducts = getRelatedProducts(product.id);
+    loadProduct();
+  }, [isOpen, productProp?.id]);
 
-  // Get personalized recommendations for active room
+  if (!isOpen) return null;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className={styles.modalOverlay} onClick={onClose}>
+        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+            <p>Loading product details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error || !product) {
+    return (
+      <div className={styles.modalOverlay} onClick={onClose}>
+        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+            <p>{error || 'Product not found'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  let relatedProducts = [];
   let recommendedProducts = [];
-  if (activeRoom) {
-    const recs = getRecommendedProducts(activeRoom, [product, ...relatedProducts], 5);
-    recommendedProducts = recs.filter(p => p.id !== product.id).slice(0, 4);
+  
+  try {
+    relatedProducts = getRelatedProducts(product.id) || [];
+
+    // Get personalized recommendations for active room
+    if (activeRoom) {
+      const recs = getRecommendedProducts(activeRoom, [product, ...relatedProducts], 5);
+      recommendedProducts = recs.filter(p => p.id !== product.id).slice(0, 4);
+    }
+  } catch (error) {
+    console.error('Error getting recommendations:', error);
   }
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
-    success(`${quantity > 1 ? `${quantity}x ` : ''}${product.name} successfully added to cart!`);
+    // Create cart item with variant-specific data
+    const cartItem = {
+      id: product.id,
+      variantId: selectedVariant?.id || product.id, // Unique variant identifier
+      name: product.name,
+      color: selectedVariant?.color || product.colors?.[0] || null,
+      price: currentData.price,
+      image: currentData.image,
+      category: product.category,
+      inStock: currentData.inStock,
+      // Include all necessary fields for cart display
+      rating: currentData.rating,
+      reviewCount: currentData.reviewCount,
+    };
+    
+    addToCart(cartItem, quantity);
+    success(`${quantity > 1 ? `${quantity}x ` : ''}${product.name}${cartItem.color ? ` (${cartItem.color})` : ''} successfully added to cart!`);
   };
 
   const renderStars = (rating) => {
@@ -64,12 +162,13 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
 
     // Check for nested dimensions (e.g., nesting tables, storage sets)
     const nestedKeys = Object.keys(dimensions).filter(key =>
-      typeof dimensions[key] === 'object' && !Array.isArray(dimensions[key])
+      typeof dimensions[key] === 'object' && dimensions[key] !== null && !Array.isArray(dimensions[key])
     );
 
     if (nestedKeys.length > 0) {
       return nestedKeys.map(key => {
         const item = dimensions[key];
+        if (!item) return null; // Skip null items
         const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
         return (
           <div key={key} className={styles.nestedDimension}>
@@ -122,6 +221,37 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
     );
   };
 
+  // Get current display data based on selected variant
+  const getCurrentData = () => {
+    if (!product) return null;
+    
+    // If no variants or variant not selected, use base product data
+    if (!product.variants || product.variants.length === 0 || !selectedVariant) {
+      return {
+        price: product.price,
+        rating: product.rating,
+        reviewCount: product.reviewCount,
+        image: product.image,
+        images: product.images,
+        dimensions: product.dimensions,
+        inStock: product.inStock
+      };
+    }
+    
+    // Use selected variant data
+    return {
+      price: selectedVariant.price,
+      rating: selectedVariant.rating,
+      reviewCount: selectedVariant.reviewCount,
+      image: selectedVariant.image,
+      images: selectedVariant.images,
+      dimensions: selectedVariant.dimensions,
+      inStock: selectedVariant.inStock
+    };
+  };
+
+  const currentData = getCurrentData();
+
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -140,20 +270,20 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
           <nav className={styles.breadcrumb}>
             <span className={styles.breadcrumbLink}>Shop</span>
             <span className={styles.breadcrumbSeparator}>/</span>
-            <span>{product.category}</span>
+            <span>{product.category || 'All'}</span>
           </nav>
 
           <div className={styles.contentLayout}>
             {/* Gallery */}
             <div className={styles.gallery}>
               <img
-                src={product.images?.[selectedImage] || product.image}
+                src={currentData?.images?.[selectedImage] || currentData?.image || product.image}
                 alt={product.name}
                 className={styles.mainImage}
               />
-              {product.images && product.images.length > 1 && (
+              {currentData?.images && currentData.images.length > 1 && (
                 <div className={styles.thumbnails}>
-                  {product.images.map((img, idx) => (
+                  {currentData.images.map((img, idx) => (
                     <img
                       key={idx}
                       src={img}
@@ -168,20 +298,58 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
 
 
             {/* Details */}
-            
+
             <div className={styles.details}>
               {/* Modern, premium grouping: Add to Room at top, then title/price, then details */}
               <div className={styles.productHeaderGroup}>
-                <div className={styles.category}>{product.category}</div>
-                <h1 className={styles.title}>{product.name}</h1>
-                <div className={styles.price}>${product.price.toLocaleString()}</div>
+                <div className={styles.category}>{product.category || 'Uncategorized'}</div>
+                <h1 className={styles.title}>{product.name || 'Product'}</h1>
+                <div className={styles.priceContainer}>
+                  {hasDiscount(currentData?.id || product.id) ? (
+                    <>
+                      <div className={styles.originalPrice}>{formatPrice(currentData?.price || 0, 'TND')}</div>
+                      <div className={styles.discountedPrice}>
+                        {formatPrice(getDiscountedPrice(currentData?.price || 0, currentData?.id || product.id), 'TND')}
+                      </div>
+                      <div className={styles.discountBadgeLarge}>-{getDiscount(currentData?.id || product.id)}% OFF</div>
+                    </>
+                  ) : (
+                    <div className={styles.price}>{formatPrice(currentData?.price || 0, 'TND')}</div>
+                  )}
+                </div>
                 <div className={styles.rating}>
-                  <div className={styles.stars}>{renderStars(product.rating)}</div>
+                  <div className={styles.stars}>{renderStars(currentData?.rating || 0)}</div>
                   <span className={styles.ratingText}>
-                    {product.rating} ({product.reviewCount} reviews)
+                    {currentData?.rating || 0} ({currentData?.reviewCount || 0} reviews)
                   </span>
                 </div>
               </div>
+              
+              {/* Color Variants Selector */}
+              {product.variants && product.variants.length > 1 && (
+                <div className={styles.colorSection}>
+                  <h3 className={styles.colorTitle}>
+                    Color: <span className={styles.selectedColor}>{selectedVariant?.color || 'Select'}</span>
+                  </h3>
+                  <div className={styles.colorOptions}>
+                    {product.variants.map((variant) => (
+                      <button
+                        key={variant.id}
+                        className={`${styles.colorButton} ${selectedVariant?.id === variant.id ? styles.active : ''}`}
+                        onClick={() => {
+                          setSelectedVariant(variant);
+                          setSelectedImage(0); // Reset to first image when changing color
+                        }}
+                        title={variant.color}
+                        aria-label={`Select ${variant.color}`}
+                      >
+                        {variant.color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {rooms.length > 0 && (
                 <div className={styles.addToRoomSection}>
                   <div className={styles.addToRoomHeader}>
@@ -204,21 +372,51 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
                     {showRoomDropdown && (
                       <div className={styles.roomDropdown}>
                         {rooms.map(room => {
-                          const isInRoom = isProductInRoom(room.id, product.id);
+                          const variantKey = selectedVariant?.id || product.id;
+                          const isInRoom = isProductInRoom(room.id, product.id, variantKey);
+                          
+                          // Find what color variant (if any) is in this room
+                          const existingVariantInRoom = room.products?.find(p => p.id === product.id);
+                          const showColorInfo = existingVariantInRoom && existingVariantInRoom.color;
+                          
                           return (
                             <button
                               key={room.id}
                               className={`${styles.roomOption} ${isInRoom ? styles.roomOptionActive : ''}`}
                               onClick={() => {
+                                // Create product data object with variant-specific information
+                                const productData = {
+                                  id: product.id,
+                                  variantId: selectedVariant?.id || product.id,
+                                  name: product.name,
+                                  category: product.category,
+                                  color: selectedVariant?.color || null,
+                                  price: currentData.price,
+                                  image: currentData.image,
+                                  images: currentData.images || [currentData.image],
+                                  rating: currentData.rating,
+                                  reviewCount: currentData.reviewCount,
+                                  dimensions: currentData.dimensions,
+                                  inStock: currentData.inStock,
+                                  description: product.description,
+                                  features: product.features,
+                                  styles: product.styles,
+                                };
+                                
                                 if (isInRoom) {
-                                  removeProductFromRoom(room.id, product.id);
+                                  removeProductFromRoom(room.id, product.id, variantKey);
                                 } else {
-                                  addProductToRoom(room.id, product.id);
+                                  addProductToRoom(room.id, productData);
                                 }
                               }}
                             >
-                              <span className={styles.roomOptionName}>{room.name}</span>
-                              <span className={styles.roomOptionType}>{room.roomType}</span>
+                              <div>
+                                <span className={styles.roomOptionName}>{room.name}</span>
+                                <span className={styles.roomOptionType}>{room.roomType}</span>
+                                {showColorInfo && !isInRoom && (
+                                  <span className={styles.roomColorInfo}>• {existingVariantInRoom.color}</span>
+                                )}
+                              </div>
                               {isInRoom && (
                                 <svg className={styles.checkIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="20 6 9 17 4 12" />
@@ -236,9 +434,9 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
 
               <div className={styles.divider} />
 
-              <p className={styles.description}>{product.description}</p>
+              <p className={styles.description}>{product.description || 'No description available.'}</p>
 
-              {product.features && (
+              {product.features && product.features.length > 0 && (
                 <div className={styles.features}>
                   <h3 className={styles.featuresTitle}>Features</h3>
                   <div className={styles.featuresList}>
@@ -249,11 +447,22 @@ const ProductDetailModal = ({ product, isOpen, onClose }) => {
                 </div>
               )}
 
-              {product.dimensions && (
+              {product.styles && product.styles.length > 0 && (
+                <div className={styles.stylesSection}>
+                  <h3 className={styles.stylesTitle}>Style</h3>
+                  <div className={styles.stylesList}>
+                    {product.styles.map((style, idx) => (
+                      <span key={idx} className={styles.styleTag}>{style}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {currentData?.dimensions && (
                 <div className={styles.dimensions}>
                   <h3 className={styles.dimensionsTitle}>Dimensions</h3>
                   <div className={styles.dimensionsList}>
-                    {formatDimensions(product.dimensions)}
+                    {formatDimensions(currentData.dimensions)}
                   </div>
                 </div>
               )}
