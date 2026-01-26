@@ -2,9 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, Mousewheel, Navigation } from 'swiper/modules';
+import { Mousewheel, Navigation } from 'swiper/modules';
 import 'swiper/css';
-import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { useRooms } from '../../context/RoomsContext';
 import { useProducts } from '../../context/ProductsContext';
@@ -131,62 +130,64 @@ const HomePage = () => {
         </div>
         <div className={styles.categoriesWrapper}>
           <Swiper
-            modules={[Pagination, Mousewheel, Navigation]}
-            spaceBetween={24}
-            slidesPerView={2}
+            modules={[Mousewheel, Navigation]}
+            spaceBetween={20}
+            slidesPerView="auto"
+            freeMode={{
+              enabled: true,
+              momentum: true,
+              momentumRatio: 0.8,
+              momentumVelocityRatio: 0.8,
+            }}
+            speed={600}
             grabCursor={true}
-            speed={400}
-            loop={false}
-            initialSlide={Math.floor(CATEGORIES.filter(cat => cat.id !== 'all').length / 2)}
-            centeredSlides={true}
-            slideToClickedSlide={true}
-            resistanceRatio={0.85}
             navigation={true}
             mousewheel={{
               forceToAxis: true,
-              sensitivity: 1,
-              releaseOnEdges: false,
-            }}
-            breakpoints={{
-              640: {
-                slidesPerView: 3,
-                spaceBetween: 20,
-              },
-              1024: {
-                slidesPerView: 4,
-                spaceBetween: 24,
-              },
-              1280: {
-                slidesPerView: 5,
-                spaceBetween: 24,
-              },
-            }}
-            pagination={{ 
-              clickable: true,
-              dynamicBullets: true,
+              sensitivity: 1.2,
+              releaseOnEdges: true,
             }}
             className={styles.categoriesSwiper}
           >
-            {CATEGORIES.filter(cat => cat.id !== 'all').map(category => (
-              <SwiperSlide key={category.id}>
-                <Link
-                  to={`/shop?category=${category.id}`}
-                  className={styles.categoryCard}
-                >
-                  <div className={styles.categoryIcon}>
-                    {category.icon.startsWith('http') || category.icon.startsWith('/') ? (
-                      <img src={category.icon} alt={category.name} />
-                    ) : (
-                      category.icon
-                    )}
-                  </div>
-                  <div className={styles.categoryName}>{category.name}</div>
-                  <div className={styles.categoryCount}>
-                    {products.filter(p => p.category.toLowerCase() === category.id).length} items
-                  </div>
-                </Link>
-              </SwiperSlide>
-            ))}
+            {CATEGORIES.filter(cat => cat.id !== 'all').map((category, index) => {
+              // Map category IDs to correct image filenames
+              const imageMap = {
+                'tv-media': 'tv_media'
+              };
+              const imageName = imageMap[category.id] || category.id;
+              
+              return (
+                <SwiperSlide key={category.id} className={styles.categorySlide}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.4 }}
+                  >
+                    <Link
+                      to={`/shop?category=${category.id}`}
+                      className={styles.categoryItem}
+                    >
+                      <div className={styles.categoryImageWrapper}>
+                        <img
+                          src={`/images/categories/${imageName}.png`}
+                          alt={category.name}
+                          className={styles.categoryImage}
+                          onError={(e) => {
+                            // Fallback to a placeholder if image doesn't exist
+                            e.target.style.display = 'none';
+                            e.target.parentElement.innerHTML += `<div class="${styles.categoryImagePlaceholder}">${category.icon}</div>`;
+                          }}
+                        />
+                      </div>
+                      <h3 className={styles.categoryTitle}>{category.name}</h3>
+                      <p className={styles.categoryItemCount}>
+                        {products.filter(p => p.category.toLowerCase() === category.id).length} items
+                      </p>
+                    </Link>
+                  </motion.div>
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
         </div>
       </section>
