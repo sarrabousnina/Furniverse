@@ -110,6 +110,10 @@ def test_smart_search(query, category=None, limit=5):
             print(f"   Category: {product['category']}")
             print(f"   Price: ${product['price']}")
             print(f"   Similarity Score: {product['score']:.4f}")
+            if product.get('tags'):
+                print(f"   Tags: {', '.join(product['tags'][:3])}")
+            if product.get('colors'):
+                print(f"   Colors: {', '.join(product['colors'][:3])}")
     else:
         print(f"❌ Error: {response.text}")
     
