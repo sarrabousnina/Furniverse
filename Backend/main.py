@@ -69,20 +69,41 @@ qdrant_client = None
 clip_model = None
 clip_processor = None
 
+app = FastAPI(title="Furniverse AI API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.on_event("startup")
 async def startup_event():
-    global qdrant_client, clip_model, clip_processor
+    global repository, qdrant_client, clip_model, clip_processor
+
+    # Initialize CSV repository FIRST
+    csv_path = Path(__file__).parent.parent / "Data" / "processed" / "products.csv"
+    try:
+        repository = CSVProductRepository(str(csv_path))
+        print(f"[OK] Repository initialized with {len(repository.get_all())} products")
+    except Exception as e:
+        print(f"[ERROR] Failed to initialize repository: {e}")
+        raise
+
+    # Initialize Qdrant and CLIP for AI recommendations
     try:
         qdrant_client = QdrantClient(
             url=qdrant_config.QDRANT_URL,
             api_key=qdrant_config.QDRANT_API_KEY
         )
-        
+
         # Load CLIP model for text encoding (produces 512-dim embeddings)
         print("Loading CLIP model...")
         clip_model = HFCLIPModel.from_pretrained('openai/clip-vit-base-patch32')
         clip_processor = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')
-        
+
         # Create indexes for filtering fields
         try:
             qdrant_client.create_payload_index(
@@ -93,7 +114,7 @@ async def startup_event():
             print("✅ Created category index")
         except Exception as e:
             print(f"Category index: {e}")
-        
+
         try:
             qdrant_client.create_payload_index(
                 collection_name=qdrant_config.COLLECTION_PRODUCTS,
@@ -103,10 +124,11 @@ async def startup_event():
             print("✅ Created price index")
         except Exception as e:
             print(f"Price index: {e}")
-        
+
         print("✅ Connected to Qdrant Cloud and loaded CLIP model")
     except Exception as e:
-        print(f"❌ Failed to initialize: {e}")
+        print(f"❌ Failed to initialize AI models: {e}")
+        print("⚠️ AI recommendations will not be available")
 
 
 class RecommendRequest(BaseModel):
@@ -391,74 +413,13 @@ class CSVProductRepository(ProductRepository):
 # FastAPI Application Setup
 # ============================================================================
 
-app = FastAPI(title="Furniverse AI API")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Initialize repository and AI models on startup
 repository: Optional[ProductRepository] = None
 qdrant_client = None
 clip_model = None
 clip_processor = None
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize data repository and AI models on startup"""
-    global repository, qdrant_client, clip_model, clip_processor
-    
-    # Initialize CSV repository
-    csv_path = Path(__file__).parent.parent / "Data" / "processed" / "products.csv"
-    try:
-        repository = CSVProductRepository(str(csv_path))
-        print(f"[OK] Repository initialized with {len(repository.get_all())} products")
-    except Exception as e:
-        print(f"[ERROR] Failed to initialize repository: {e}")
-        raise
-    
-    # Initialize Qdrant and CLIP for AI recommendations
-    try:
-        qdrant_client = QdrantClient(
-            url=qdrant_config.QDRANT_URL,
-            api_key=qdrant_config.QDRANT_API_KEY
-        )
-        
-        # Load CLIP model for text encoding (produces 512-dim embeddings)
-        print("Loading CLIP model...")
-        clip_model = HFCLIPModel.from_pretrained('openai/clip-vit-base-patch32')
-        clip_processor = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')
-        
-        # Create indexes for filtering fields
-        try:
-            qdrant_client.create_payload_index(
-                collection_name=qdrant_config.COLLECTION_PRODUCTS,
-                field_name="category",
-                field_schema=PayloadSchemaType.KEYWORD
-            )
-            print("✅ Created category index")
-        except Exception as e:
-            print(f"Category index: {e}")
-        
-        try:
-            qdrant_client.create_payload_index(
-                collection_name=qdrant_config.COLLECTION_PRODUCTS,
-                field_name="price",
-                field_schema=PayloadSchemaType.FLOAT
-            )
-            print("✅ Created price index")
-        except Exception as e:
-            print(f"Price index: {e}")
-        
-        print("✅ Connected to Qdrant Cloud and loaded CLIP model")
-    except Exception as e:
-        print(f"❌ Failed to initialize AI models: {e}")
-        print("⚠️ AI recommendations will not be available")
 
 
 # ============================================================================
