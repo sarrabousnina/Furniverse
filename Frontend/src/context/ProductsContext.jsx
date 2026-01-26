@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { fetchProducts as fetchProductsAPI, fetchCategories } from '../services/api';
+import { useCustomProducts } from './CustomProductsContext';
 
 const ProductsContext = createContext();
 
@@ -12,10 +13,14 @@ export const useProducts = () => {
 };
 
 export const ProductsProvider = ({ children }) => {
-  const [products, setProducts] = useState([]);
+  const { customProducts } = useCustomProducts();
+  const [backendProducts, setBackendProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Merge backend products with custom products
+  const products = [...backendProducts, ...customProducts];
 
   // Fetch all products on mount
   useEffect(() => {
@@ -28,7 +33,7 @@ export const ProductsProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       const data = await fetchProductsAPI();
-      setProducts(data);
+      setBackendProducts(data);
     } catch (err) {
       setError(err.message);
       console.error('Failed to load products:', err);
@@ -47,7 +52,8 @@ export const ProductsProvider = ({ children }) => {
   };
 
   const getProductById = (id) => {
-    return products.find(p => p.id === parseInt(id));
+    const numId = typeof id === 'string' ? parseInt(id) : id;
+    return products.find(p => p.id === numId);
   };
 
   const getProductsByCategory = (category) => {

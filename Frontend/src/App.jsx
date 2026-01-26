@@ -8,6 +8,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { ProductsProvider } from './context/ProductsContext';
 import { DiscountProvider } from './context/DiscountContext';
+import { CustomProductsProvider } from './context/CustomProductsContext';
 
 // Pages
 import HomePage from './pages/HomePage/HomePage';
@@ -80,18 +81,20 @@ function App() {
       <ThemeProvider>
         <ToastProvider>
           <DiscountProvider>
-            <AuthProvider>
-              <ProductsProvider>
-                <CartProvider>
-                  <RoomsProvider>
-                    <ProductModalProvider>
-                      <AppContent />
-                      <ToastContainer />
-                    </ProductModalProvider>
-                  </RoomsProvider>
-                </CartProvider>
-              </ProductsProvider>
-            </AuthProvider>
+            <CustomProductsProvider>
+              <AuthProvider>
+                <ProductsProvider>
+                  <CartProvider>
+                    <RoomsProvider>
+                      <ProductModalProvider>
+                        <AppContent />
+                        <ToastContainer />
+                      </ProductModalProvider>
+                    </RoomsProvider>
+                  </CartProvider>
+                </ProductsProvider>
+              </AuthProvider>
+            </CustomProductsProvider>
           </DiscountProvider>
         </ToastProvider>
       </ThemeProvider>

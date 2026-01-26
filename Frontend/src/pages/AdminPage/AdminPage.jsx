@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useProducts } from '../../context/ProductsContext';
 import { useDiscounts } from '../../context/DiscountContext';
+import AddProductModal from '../../components/AddProductModal/AddProductModal';
 import styles from './AdminPage.module.css';
 
 const AdminPage = () => {
@@ -10,6 +11,7 @@ const AdminPage = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
 
   const handleDiscountChange = (productId, value) => {
     setDiscountInput(prev => ({
@@ -93,14 +95,25 @@ const AdminPage = () => {
                 : 'Manage product discounts for your store'}
             </p>
           </div>
-          {discountedCount > 0 && (
+          <div style={{ display: 'flex', gap: 'var(--spacing-md, 16px)' }}>
             <button
-              className={styles.clearAllButton}
-              onClick={() => setShowClearConfirm(true)}
+              className={styles.addButton}
+              onClick={() => setIsAddProductModalOpen(true)}
             >
-              Clear All Discounts ({discountedCount})
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add Product
             </button>
-          )}
+            {discountedCount > 0 && (
+              <button
+                className={styles.clearAllButton}
+                onClick={() => setShowClearConfirm(true)}
+              >
+                Clear All Discounts ({discountedCount})
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Clear Confirmation Modal */}
@@ -309,6 +322,12 @@ const AdminPage = () => {
         <div className={styles.info}>
           <p>💡 <strong>Note:</strong> Discounts are automatically saved and will persist after page refresh.</p>
         </div>
+
+        {/* Add Product Modal */}
+        <AddProductModal
+          isOpen={isAddProductModalOpen}
+          onClose={() => setIsAddProductModalOpen(false)}
+        />
       </div>
     </div>
   );
