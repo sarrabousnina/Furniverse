@@ -1,149 +1,127 @@
 # 🛋️ Furniverse
 
-> **AI-Powered Multimodal Furniture Recommendation System**  
-> Smart furniture discovery using CLIP embeddings, graph intelligence, and vector search
-
-[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com/)
-[![Qdrant](https://img.shields.io/badge/Qdrant-Vector%20DB-red.svg)](https://qdrant.tech/)
-[![CLIP](https://img.shields.io/badge/OpenAI-CLIP-412991.svg)](https://openai.com/research/clip)
-[![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev/)
+AI-powered furniture recommendation system using multimodal embeddings and vector search.
 
 ---
 
-## 🎯 What is Furniverse?
+## 📝 Description
 
-Furniverse transforms furniture shopping with **multimodal AI fusion**—combining semantic understanding, visual intelligence, and graph-based relationships to deliver smarter product recommendations.
+Furniverse is an intelligent furniture e-commerce platform that leverages advanced AI technologies to provide smarter product recommendations. Unlike traditional keyword-based search, our system understands the semantic meaning of queries, visual aesthetics, and style relationships between products.
 
-```
-Query: "luxury velvet sofa under $400"
-→ AI understands: material, style, budget
-→ Searches: 512D semantic + 256D graph + 548D color spaces
-→ Returns: "Sorry, no velvet at $400, but here are fabric alternatives with similar aesthetics"
-```
-
-**Key Innovation:** Weighted fusion of CLIP (60%), Graph (30%), and Color (10%) embeddings for superior accuracy.
+**Key Features:**
+- Semantic search using CLIP embeddings
+- Budget-aware recommendations with smart fallbacks
+- Graph-based product relationship discovery
+- Color palette matching (548D color features)
+- Multimodal fusion search (60% CLIP + 30% Graph + 10% Color)
 
 ---
 
-## ⚡ Quick Start
+## 🛠️ Tech Stack
 
+### Backend
+- **FastAPI** - Modern Python web framework
+- **Qdrant Cloud** - Vector database for similarity search
+- **CLIP** (OpenAI) - Multimodal text/image embeddings
+- **Node2Vec** - Graph embeddings for product relationships
+- **PyTorch** - Deep learning framework
+- **Transformers** - Hugging Face model hub
+
+### Frontend
+- **React 18** - UI library
+- **Vite** - Build tool
+- **CSS Modules** - Component styling
+
+### ML Pipeline
+- **NetworkX** - Graph construction
+- **scikit-learn** - Color clustering (K-means)
+- **Pillow** - Image processing
+
+---
+
+## 🚀 Setup & Run Instructions
+
+### Prerequisites
+- Python 3.12+
+- Node.js 18+
+- Git
+
+### 1. Clone Repository
 ```bash
-# 1. Clone and install
 git clone https://github.com/yourusername/furniverse.git
 cd furniverse
-uv sync
-
-# 2. Configure Qdrant (edit Pipeline/qdrant_config.py)
-QDRANT_URL = "your-cluster-url"
-QDRANT_API_KEY = "your-api-key"
-
-# 3. Index products
-cd Pipeline && python run_indexing.py
-
-# 4. Start Backend
-cd Backend && uvicorn main:app --reload
-
-# 5. Start Frontend
-cd Frontend && npm install && npm run dev
 ```
 
-**API Docs:** `http://localhost:8000/docs`  
-**Frontend:** `http://localhost:5173`
-
----
-
-## 🚀 Core Features
-
-| Feature | Technology | Description |
-|---------|-----------|-------------|
-| **Multimodal Fusion** | CLIP + Node2Vec + Color | Weighted search across 3 embedding spaces |
-| **Semantic Search** | `openai/clip-vit-base-patch32` | Natural language understanding |
-| **Budget-Aware AI** | Smart fallback logic | Finds substitutes when exact matches exceed budget |
-| **Graph Intelligence** | Node2Vec (256D) | Discovers style-similar products |
-| **Color Matching** | K-means + RGB/HSV (548D) | Palette-based recommendations |
-
----
-
-## 📡 API Endpoints
-
-### Fusion Search (Recommended)
+### 2. Install Dependencies
 ```bash
-POST /recommend/fusion
-{
-  "query": "luxury velvet sofa under $400",
-  "limit": 5
-}
+# Python dependencies
+uv sync
+# OR
+pip install -r Pipeline/requirements.txt
+pip install -r Backend/requirements.txt
+
+# Frontend dependencies
+cd Frontend
+npm install
 ```
 
-### Additional Endpoints
-- `POST /recommend/text` - CLIP text search
+### 3. Configure Qdrant Cloud
+Edit `Pipeline/qdrant_config.py`:
+```python
+QDRANT_URL = "your-qdrant-cluster-url"
+QDRANT_API_KEY = "your-api-key"
+```
+
+### 4. Index Products (First Time Only)
+```bash
+cd Pipeline
+python run_indexing.py
+```
+This generates CLIP embeddings, color features, and graph embeddings for ~200 products.
+
+### 5. Start Backend API
+```bash
+cd Backend
+uvicorn main:app --reload
+```
+API: `http://localhost:8000`  
+Docs: `http://localhost:8000/docs`
+
+### 6. Start Frontend
+```bash
+cd Frontend
+npm run dev
+```
+Frontend: `http://localhost:5173`
+
+---
+
+## 📡 API Usage
+
+### Multimodal Fusion Search
+```bash
+curl -X POST "http://localhost:8000/recommend/fusion" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "luxury velvet sofa under $400", "limit": 5}'
+```
+
+### Other Endpoints
+- `POST /recommend/text` - CLIP semantic search
 - `POST /recommend/similar/{id}` - Graph-based similar products
-- `POST /recommend/smart` - Budget-aware with fallback
+- `POST /recommend/smart` - Budget-aware search with fallback
 - `GET /stats` - Database statistics
 
-Full documentation: See [API Docs](http://localhost:8000/docs)
+See full API documentation at `http://localhost:8000/docs`
 
 ---
 
-## 🏗️ Architecture
+## 👥 Team Members
 
-```
-User Query → FastAPI → CLIP Encoding (512D)
-                    ↓
-          Qdrant Vector Search
-          ├─ image_clip (512D, 60%)
-          ├─ graph (256D, 30%)
-          └─ color (548D, 10%)
-                    ↓
-          Fusion Re-ranking → Results
-
-
-## 📊 Technology Stack
-
-**Backend:** FastAPI, Qdrant Cloud, CLIP, Node2Vec  
-**Frontend:** React 18, Vite  
-**ML/AI:** PyTorch, Transformers, NetworkX, scikit-learn  
-**Database:** Qdrant (Cosine similarity)  
-
-**Data:** 200 products, 1K users, 20K interactions
+- **[Marwa Mokhtar]** 
+- **[Roua Khalfet]** 
+- **[Sarra Bousnina]** 
+- **[Sameur Mkaouar]**
+- **[Yassine Kharrat]**
 
 ---
-
-**Example Output:**
-```
-🔬 MULTIMODAL FUSION SEARCH
-Query: luxury velvet sofa under $300
-Strategy: multimodal_fusion
-Fusion Weights: CLIP (60%), Graph (30%), Color (10%)
-
-Top Products:
-1. GLOSTAD Sofa - $199 (fusion: 0.87, clip: 0.31, graph: 0.85)
-   Tags: fabric, comfortable, affordable
-```
-
----
-
-## 📈 Performance
-
-| Metric | Value |
-|--------|-------|
-| Search Latency | <50ms |
-| Indexing Speed | 50-100 products/min |
-| Accuracy | 85-92% |
-| Total Vectors | 1,828 dimensions/product |
-
-
-
-## 🚀 Future Roadmap
-
-- [ ] Image upload search ("Find like this photo")
-- [ ] User personalization (preference indexing)
-- [ ] Room scene understanding (AR preview)
-- [ ] Multi-language support
-
----
-
-
-
 
