@@ -2,6 +2,7 @@ import React from 'react';
 import { useCart } from '../../context/CartContext';
 import { useProductModal } from '../../context/ProductModalContext';
 import { useToast } from '../../context/ToastContext';
+import { useDiscounts } from '../../context/DiscountContext';
 import { trackProductClick } from '../../utils/userTracking';
 import { formatPrice } from '../../utils/currency';
 import styles from './ProductCard.module.css';
@@ -11,6 +12,7 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
   const { addToCart } = useCart();
   const { openProductModal } = useProductModal();
   const { success } = useToast();
+  const { hasDiscount, getDiscount, getDiscountedPrice } = useDiscounts();
 
   // Validate product data
   if (!product || typeof product !== 'object' || !product.id || !product.name) {
@@ -56,6 +58,13 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
         <div className={styles.matchBadge}>
           <span>✨</span>
           {matchScore}% match
+        </div>
+      )}
+
+      {/* Discount Badge */}
+      {hasDiscount(product.id) && (
+        <div className={styles.discountBadge}>
+          -{getDiscount(product.id)}%
         </div>
       )}
 
@@ -111,10 +120,15 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
         {/* Footer */}
         <div className={styles.footer}>
           <div className={styles.priceSection}>
-            {product.variants && product.variants.length > 1 ? (
+            {hasDiscount(product.id) ? (
+              <>
+                <div className={styles.originalPrice}>{formatPrice(product.price, 'TND')}</div>
+                <div className={styles.discountedPrice}>{formatPrice(getDiscountedPrice(product.price, product.id), 'TND')}</div>
+              </>
+            ) : product.variants && product.variants.length > 1 ? (
               <>
                 <div className={styles.priceLabel}>Starts from</div>
-                <div className={styles.price}>{formatPrice(Math.min(...product.variants.map(v => v.price)), 'TND')}</div>
+                <div className={styles.price}>{formatPrice(product.price, 'TND')}</div>
               </>
             ) : (
               <div className={styles.price}>{formatPrice(product.price, 'TND')}</div>

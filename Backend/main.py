@@ -183,7 +183,7 @@ class CSVProductRepository(ProductRepository):
         try:
             df = pd.read_csv(self.csv_path)
             self.products = [self._transform_row(row) for _, row in df.iterrows()]
-            print(f"✓ Loaded {len(self.products)} products from CSV")
+            print(f"[OK] Loaded {len(self.products)} products from CSV")
         except Exception as e:
             raise RuntimeError(f"Failed to load CSV: {e}")
     
@@ -266,10 +266,13 @@ class CSVProductRepository(ProductRepository):
             )
             grouped[key].variants.append(variant)
         
-        # Update the colors list to include all variant colors
+        # Update the colors list and set base price to minimum variant price
         for product in grouped.values():
             product.colors = [v.color for v in product.variants]
-        
+            # Set base price to minimum of all variant prices
+            if product.variants:
+                product.price = min(v.price for v in product.variants)
+
         return list(grouped.values())
     
     def get_all(self) -> List[Product]:
@@ -343,9 +346,9 @@ async def startup_event():
     csv_path = Path(__file__).parent.parent / "Data" / "processed" / "products.csv"
     try:
         repository = CSVProductRepository(str(csv_path))
-        print(f"✓ Repository initialized with {len(repository.get_all())} products")
+        print(f"[OK] Repository initialized with {len(repository.get_all())} products")
     except Exception as e:
-        print(f"✗ Failed to initialize repository: {e}")
+        print(f"[ERROR] Failed to initialize repository: {e}")
         raise
 
 

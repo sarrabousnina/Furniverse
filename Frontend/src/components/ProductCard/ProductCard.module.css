@@ -131,6 +131,21 @@
   align-items: center;
   gap: 4px;
   box-shadow: 0 2px 8px rgba(13, 77, 77, 0.3);
+  z-index: 2;
+}
+
+.discountBadge {
+  position: absolute;
+  top: var(--spacing-md, 16px);
+  right: var(--spacing-md, 16px);
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+  padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  z-index: 2;
 }
 
 .content {
@@ -215,6 +230,19 @@
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-accent, #0D4D4D);
+}
+
+.originalPrice {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6B6B6B);
+  text-decoration: line-through;
+}
+
+.discountedPrice {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #DC2626;
 }
 
 .colorIndicator {

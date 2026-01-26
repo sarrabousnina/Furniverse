@@ -1,33 +1,33 @@
 /**
- * Currency conversion and formatting utilities
- * Converts USD prices to Tunisian Dinar (TND)
- * Exchange rate: 1 USD = 2.89 TND
+ * Currency formatting utilities
+ * Prices are stored and displayed in the currency specified (TND, USD, etc.)
+ * No conversion is applied - prices are used as-is from the database
  */
 
 const EXCHANGE_RATES = {
   USD: 1,
-  TND: 2.89
+  TND: 1
 };
 
 /**
  * Format price in the specified currency
- * @param {number} amount - The price amount in USD
- * @param {string} currency - The target currency ('USD' or 'TND')
- * @param {number} decimals - Number of decimal places (default: 3 for TND, 0 for USD)
+ * @param {number} amount - The price amount (already in target currency)
+ * @param {string} currency - The currency code ('USD' or 'TND')
+ * @param {number} decimals - Number of decimal places (default: 0)
  * @returns {string} Formatted price string
  */
 export const formatPrice = (amount, currency = 'TND', decimals = null) => {
   if (!amount && amount !== 0) return '0';
-  
-  const converted = amount * EXCHANGE_RATES[currency];
-  const decimalPlaces = decimals !== null ? decimals : (currency === 'TND' ? 3 : 0);
-  
+
+  // No currency conversion - prices are already in the correct currency from the database
+  const decimalPlaces = decimals !== null ? decimals : 0;
+
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
     minimumFractionDigits: decimalPlaces,
     maximumFractionDigits: decimalPlaces
-  }).format(converted);
+  }).format(amount);
 };
 
 /**

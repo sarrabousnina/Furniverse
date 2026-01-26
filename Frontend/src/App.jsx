@@ -7,6 +7,7 @@ import { ProductModalProvider, useProductModal } from './context/ProductModalCon
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { ProductsProvider } from './context/ProductsContext';
+import { DiscountProvider } from './context/DiscountContext';
 
 // Pages
 import HomePage from './pages/HomePage/HomePage';
@@ -15,6 +16,7 @@ import ProductDetailPage from './pages/ProductDetailPage/ProductDetailPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import CheckoutPage from './pages/CheckoutPage/CheckoutPage';
 import RoomDetailPage from './pages/RoomDetailPage/RoomDetailPage';
+import AdminPage from './pages/AdminPage/AdminPage';
 
 // Components
 import Navigation from './components/Navigation/Navigation';
@@ -40,11 +42,13 @@ function AppContent() {
   const { isCartOpen } = useCart();
   const { isAuthModalOpen } = useAuth();
   const { selectedProduct, isModalOpen, closeProductModal } = useProductModal();
+  const location = useLocation();
+  const isAdminPage = location.pathname === '/admin';
 
   return (
     <>
       <ScrollToTop />
-      <Navigation />
+      {!isAdminPage && <Navigation />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
@@ -52,6 +56,7 @@ function AppContent() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/room/:roomId" element={<RoomDetailPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
@@ -74,18 +79,20 @@ function App() {
     <Router>
       <ThemeProvider>
         <ToastProvider>
-          <AuthProvider>
-            <ProductsProvider>
-              <CartProvider>
-                <RoomsProvider>
-                  <ProductModalProvider>
-                    <AppContent />
-                    <ToastContainer />
-                  </ProductModalProvider>
-                </RoomsProvider>
-              </CartProvider>
-            </ProductsProvider>
-          </AuthProvider>
+          <DiscountProvider>
+            <AuthProvider>
+              <ProductsProvider>
+                <CartProvider>
+                  <RoomsProvider>
+                    <ProductModalProvider>
+                      <AppContent />
+                      <ToastContainer />
+                    </ProductModalProvider>
+                  </RoomsProvider>
+                </CartProvider>
+              </ProductsProvider>
+            </AuthProvider>
+          </DiscountProvider>
         </ToastProvider>
       </ThemeProvider>
     </Router>

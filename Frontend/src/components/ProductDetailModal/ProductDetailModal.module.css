@@ -266,6 +266,36 @@
   margin-bottom: var(--spacing-md, 16px);
 }
 
+.priceContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md, 16px);
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.originalPrice {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6B6B6B);
+  text-decoration: line-through;
+}
+
+.discountedPrice {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #DC2626;
+}
+
+.discountBadgeLarge {
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+  border-radius: var(--radius-md, 10px);
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
 .description {
   color: var(--color-text-secondary, #6B6B6B);
   line-height: 1.7;

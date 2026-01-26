@@ -3,6 +3,7 @@ import { useProducts } from '../../context/ProductsContext';
 import { useCart } from '../../context/CartContext';
 import { useRooms } from '../../context/RoomsContext';
 import { useToast } from '../../context/ToastContext';
+import { useDiscounts } from '../../context/DiscountContext';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import { trackProductView } from '../../utils/userTracking';
 import { fetchProductById } from '../../services/api';
@@ -15,6 +16,7 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
   const { rooms, getActiveRoom, addProductToRoom, removeProductFromRoom, isProductInRoom } = useRooms();
   const { success } = useToast();
   const { getRelatedProducts } = useProducts();
+  const { hasDiscount, getDiscount, getDiscountedPrice } = useDiscounts();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -296,13 +298,25 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
 
 
             {/* Details */}
-            
+
             <div className={styles.details}>
               {/* Modern, premium grouping: Add to Room at top, then title/price, then details */}
               <div className={styles.productHeaderGroup}>
                 <div className={styles.category}>{product.category || 'Uncategorized'}</div>
                 <h1 className={styles.title}>{product.name || 'Product'}</h1>
-                <div className={styles.price}>{formatPrice(currentData?.price || 0, 'TND')}</div>
+                <div className={styles.priceContainer}>
+                  {hasDiscount(currentData?.id || product.id) ? (
+                    <>
+                      <div className={styles.originalPrice}>{formatPrice(currentData?.price || 0, 'TND')}</div>
+                      <div className={styles.discountedPrice}>
+                        {formatPrice(getDiscountedPrice(currentData?.price || 0, currentData?.id || product.id), 'TND')}
+                      </div>
+                      <div className={styles.discountBadgeLarge}>-{getDiscount(currentData?.id || product.id)}% OFF</div>
+                    </>
+                  ) : (
+                    <div className={styles.price}>{formatPrice(currentData?.price || 0, 'TND')}</div>
+                  )}
+                </div>
                 <div className={styles.rating}>
                   <div className={styles.stars}>{renderStars(currentData?.rating || 0)}</div>
                   <span className={styles.ratingText}>
