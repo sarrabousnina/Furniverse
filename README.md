@@ -144,9 +144,6 @@ Top Products:
 
 ---
 
-<p align="center">
-  <b>Built with ❤️ using AI, Vectors, and Graphs</b><br>
-  <sub>Furniverse - Where AI meets furniture shopping</sub>
-</p>
+
 
 
