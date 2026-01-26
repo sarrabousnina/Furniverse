@@ -97,11 +97,7 @@ User Query → FastAPI → CLIP Encoding (512D)
           └─ color (548D, 10%)
                     ↓
           Fusion Re-ranking → Results
-```
 
-**Detailed Architecture:** See [ARCHITECTURE.md](ARCHITECTURE.md)
-
----
 
 ## 📊 Technology Stack
 
@@ -163,3 +159,4 @@ Top Products:
   <b>Built with ❤️ using AI, Vectors, and Graphs</b><br>
   <sub>Furniverse - Where AI meets furniture shopping</sub>
 </p>
+
