@@ -409,3 +409,42 @@
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }
+
+/* Discounted Section */
+.discountedSection {
+  position: relative;
+  margin-top: var(--spacing-2xl, 48px);
+  margin-bottom: var(--spacing-2xl, 48px);
+  padding: var(--spacing-2xl, 48px) var(--spacing-xl, 32px);
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+  border-radius: var(--radius-xl, 20px);
+  border: 2px solid rgba(220, 38, 38, 0.2);
+}
+
+.discountBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+  color: white;
+  border-radius: var(--radius-lg, 16px);
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md, 16px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.discountBadge svg {
+  width: 18px;
+  height: 18px;
+}
+
+.discountedSection .sectionTitle {
+  color: #DC2626;
+}
+
+.discountedSection .productsGrid {
+  margin-top: var(--spacing-lg, 24px);
+}
+

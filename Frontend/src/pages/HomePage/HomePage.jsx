@@ -7,6 +7,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { useRooms } from '../../context/RoomsContext';
 import { useProducts } from '../../context/ProductsContext';
+import { useDiscounts } from '../../context/DiscountContext';
 import { CATEGORIES } from '../../data/products';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -15,10 +16,16 @@ import styles from './HomePage.module.css';
 const HomePage = () => {
   const { rooms, getActiveRoom } = useRooms();
   const { products, loading, error, getTrendingProducts } = useProducts();
+  const { hasDiscount } = useDiscounts();
   const activeRoom = getActiveRoom();
 
   // Get trending products
   const trendingProducts = getTrendingProducts().slice(0, 8);
+
+  // Get discounted products
+  const discountedProducts = products
+    .filter(product => hasDiscount(product.id))
+    .slice(0, 8);
 
   // Get personalized recommendations if user has rooms
   const recommendedProducts = activeRoom
@@ -241,6 +248,42 @@ const HomePage = () => {
           View All Products →
         </Link>
       </section>
+
+      {/* Discounted Products */}
+      {discountedProducts.length > 0 && (
+        <section className={`${styles.container} ${styles.discountedSection}`}>
+          <div className={styles.sectionHeader}>
+            <motion.div
+              className={styles.discountBadge}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+              </svg>
+              Limited Time Offers
+            </motion.div>
+            <h2 className={styles.sectionTitle}>Special Discounts</h2>
+            <p className={styles.sectionSubtitle}>
+              Don't miss out on these amazing deals
+            </p>
+          </div>
+          <div className={styles.productsGrid}>
+            {discountedProducts.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                style={{ animationDelay: `${index * 50}ms` }}
+              />
+            ))}
+          </div>
+          <Link to="/shop" className={styles.viewAllLink}>
+            Shop All Discounts →
+          </Link>
+        </section>
+      )}
     </div>
   );
 };
