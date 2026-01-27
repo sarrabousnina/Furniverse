@@ -93,15 +93,48 @@ export const getRecommendation = async (query) => {
       },
       body: JSON.stringify({ query }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to get recommendation: ${response.statusText}`);
     }
-    
+
     const recommendation = await response.json();
     return recommendation;
   } catch (error) {
     console.error('Error getting recommendation:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get AI-powered smart search with budget awareness
+ * @param {string} query - Natural language search query
+ * @param {string} category - Optional category filter
+ * @param {number} limit - Number of results (default: 8)
+ * @returns {Promise<Object>} Smart search response with AI analysis
+ */
+export const smartSearch = async (query, category = null, limit = 8) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/recommend/smart`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query,
+        category,
+        limit
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to perform smart search: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error performing smart search:', error);
     throw error;
   }
 };
