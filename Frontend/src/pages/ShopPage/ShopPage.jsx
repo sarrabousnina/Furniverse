@@ -5,6 +5,7 @@ import { CATEGORIES } from '../../data/products';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import { useRooms } from '../../context/RoomsContext';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import AISearchBar from '../../components/AISearchBar/AISearchBar';
 import styles from './ShopPage.module.css';
 
 const ShopPage = () => {
@@ -170,6 +171,9 @@ const ShopPage = () => {
             {filteredProducts.length} products found
           </p>
         </div>
+
+        {/* AI Search Bar */}
+        <AISearchBar />
 
         <div className={styles.content}>
           {/* Sidebar Filters */}
