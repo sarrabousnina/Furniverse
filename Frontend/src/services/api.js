@@ -221,3 +221,35 @@ export const getUserStats = async () => {
     throw error;
   }
 };
+
+/**
+ * Trade-off aware search with explainability
+ * Returns products with trade-off analysis (what you gain vs what you lose)
+ */
+export const searchWithTradeoffs = async (query, category = null, limit = 10) => {
+  try {
+    const requestBody = {
+      query: query,
+      category: category,
+      limit: limit
+    };
+
+    const response = await fetch(`${API_BASE_URL}/search/tradeoffs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Trade-off search failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error searching with trade-offs:', error);
+    throw error;
+  }
+};

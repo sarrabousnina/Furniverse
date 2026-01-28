@@ -17,6 +17,7 @@ import qdrant_config
 from transformers import CLIPModel as HFCLIPModel, CLIPProcessor
 import numpy as np
 from user_activity import tracker, UserEvent
+import embedding_tradeoff
 
 
 # ============================================================================
@@ -105,6 +106,14 @@ async def startup_event():
         clip_model = HFCLIPModel.from_pretrained('openai/clip-vit-base-patch32')
         clip_processor = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')
 
+        # Initialize embedding-based trade-off system
+        try:
+            embedding_tradeoff.initialize_embedding_system(clip_model, clip_processor)
+        except Exception as e:
+            print(f"⚠️ Failed to initialize embedding trade-off system: {e}")
+            import traceback
+            traceback.print_exc()
+
         # Create indexes for filtering fields
         try:
             qdrant_client.create_payload_index(
@@ -145,6 +154,85 @@ class ProductRecommendation(BaseModel):
     price: float
     score: float
     image: Optional[str] = None
+
+
+# ============================================================================
+# Trade-off Recommendation System
+# ============================================================================
+
+class TradeOffSearchRequest(BaseModel):
+    query: str
+    category: Optional[str] = None
+    limit: Optional[int] = 8
+
+
+def extract_user_preferences(query: str, query_embedding: np.ndarray = None) -> dict:
+    """
+    Extract user preferences from natural language query using CLIP embeddings
+
+    Uses semantic similarity instead of hardcoded keyword matching
+
+    Args:
+        query: User's natural language query
+        query_embedding: Pre-computed CLIP embedding (optional, will compute if not provided)
+
+    Returns:
+        dict with keys: budget, material, style, color, comfort, confidences
+    """
+    # If no embedding provided, compute it
+    if query_embedding is None:
+        inputs = clip_processor(text=[query], return_tensors="pt", padding=True, truncation=True)
+        text_features = clip_model.get_text_features(**inputs)
+        query_embedding = text_features.detach().numpy()[0]
+
+    # Use embedding-based extractor
+    if embedding_tradeoff.attribute_extractor is not None:
+        return embedding_tradeoff.attribute_extractor.extract_preferences(query, query_embedding)
+    else:
+        # Fallback to simple extraction if not initialized
+        print("⚠️ Embedding extractor not initialized, using fallback")
+        return {
+            "budget": None,
+            "material": None,
+            "style": None,
+            "color": None,
+            "comfort": None,
+            "confidences": {}
+        }
+
+
+def calculate_tradeoffs(product: dict, preferences: dict, query_embedding: Optional[np.ndarray] = None) -> dict:
+    """
+    Calculate trade-offs between product and user preferences using CLIP embeddings
+
+    Uses semantic similarity for explainability instead of hardcoded rules
+
+    Args:
+        product: Product data
+        preferences: Extracted user preferences
+        query_embedding: CLIP embedding of user query (optional)
+
+    Returns:
+        dict with gains, loses, score, is_compromise, similarity, match_explanation
+    """
+    if embedding_tradeoff.tradeoff_analyzer is not None and query_embedding is not None:
+        # Use embedding-based analyzer
+        return embedding_tradeoff.tradeoff_analyzer.analyze_tradeoffs(product, preferences, query_embedding)
+    else:
+        # Fallback to simple analysis
+        if query_embedding is None:
+            print("⚠️ No query embedding provided for trade-off analysis")
+        if embedding_tradeoff.tradeoff_analyzer is None:
+            print("⚠️ Trade-off analyzer not initialized")
+
+        return {
+            "gains": ["✓ Product found"],
+            "loses": [],
+            "score": 1,
+            "is_compromise": False,
+            "similarity": 0.0,
+            "match_explanation": "Basic match (embedding analysis unavailable)"
+        }
 
 
 # ============================================================================
@@ -881,6 +969,146 @@ def smart_recommend(request: RecommendRequest):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
+@app.post("/search/tradeoffs")
+def search_with_tradeoffs(request: TradeOffSearchRequest):
+    """
+    Trade-off aware search with explainability
+
+    This endpoint:
+    1. Extracts user preferences from the query (budget, material, style, color, comfort)
+    2. Searches Qdrant for semantically similar products
+    3. Calculates trade-offs for each product (what you gain vs what you lose)
+    4. Returns products with detailed explainability
+
+    Example query: "comfy modern red leather couch budget 500"
+
+    Returns:
+        - exact_matches: Products that match all preferences
+        - trade_offs: Products with compromises (explained)
+        - user_preferences: Extracted preferences from query
+    """
+    if not qdrant_client or not clip_model or not clip_processor:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    try:
+        # Step 1: Generate CLIP text embedding (used for both search and extraction)
+        inputs = clip_processor(text=[request.query], return_tensors="pt", padding=True, truncation=True)
+        text_features = clip_model.get_text_features(**inputs)
+        query_embedding = text_features.detach().numpy()[0]  # Keep as numpy array
+        query_embedding_list = query_embedding.tolist()  # Convert for Qdrant
+
+        # Step 2: Extract user preferences using CLIP embeddings
+        preferences = extract_user_preferences(request.query, query_embedding)
+
+        # Step 3: Build filters
+        filters = []
+
+        if request.category and request.category != 'all':
+            filters.append(FieldCondition(key="category", match=MatchValue(value=request.category)))
+
+        # Budget as hard constraint
+        if preferences.get("budget"):
+            filters.append(FieldCondition(key="price", range={"lte": preferences["budget"]}))
+
+        search_filter = Filter(must=filters) if filters else None
+
+        # Step 4: Primary search with text_clip
+        results = qdrant_client.search(
+            collection_name=qdrant_config.COLLECTION_PRODUCTS,
+            query_vector=("image_clip", query_embedding_list),
+            limit=request.limit or 10,
+            query_filter=search_filter,
+            with_payload=True,
+            score_threshold=0.2
+        )
+
+        # Step 5: Calculate trade-offs for each product using embeddings
+        exact_matches = []
+        trade_offs = []
+
+        for result in results:
+            payload = result.payload
+
+            # Build product dict for trade-off calculation
+            product = {
+                "product_id": payload.get('product_id'),
+                "name": payload.get('name'),
+                "category": payload.get('category'),
+                "price": payload.get('price'),
+                "score": round(result.score, 4),
+                "image": payload.get('image'),
+                "description": payload.get('description', ''),
+                "tags": payload.get('tags', []),
+                "styles": payload.get('styles', []),
+                "colors": payload.get('colors', [])
+            }
+
+            # Calculate trade-offs using CLIP embeddings
+            tradeoff_analysis = calculate_tradeoffs(product, preferences, query_embedding)
+
+            # Add trade-off info to product
+            product["tradeoff_analysis"] = tradeoff_analysis
+
+            # Separate exact matches from trade-offs
+            if not tradeoff_analysis["is_compromise"]:
+                exact_matches.append(product)
+            else:
+                trade_offs.append(product)
+
+        # Step 6: Build response with explainability
+        response = {
+            "query": request.query,
+            "user_preferences": preferences,
+            "total_results": len(results),
+            "exact_matches": exact_matches,
+            "trade_offs": trade_offs,
+            "explanation": build_tradeoff_explanation(preferences, len(exact_matches), len(trade_offs)),
+            "embedding_analysis": {
+                "method": "clip_similarity",
+                "embedding_model": "openai/clip-vit-base-patch32",
+                "dimensions": 512
+            }
+        }
+
+        return response
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Trade-off search failed: {str(e)}")
+
+
+def build_tradeoff_explanation(preferences: dict, exact_count: int, tradeoff_count: int) -> str:
+    """Build human-readable explanation for trade-off results"""
+
+    if exact_count > 0:
+        return f"Found {exact_count} perfect match(es) for your search!"
+
+    if tradeoff_count == 0:
+        return "No products found matching your criteria. Try adjusting your search or budget."
+
+    # Build explanation for trade-offs
+    explanations = []
+
+    if preferences.get("budget") and preferences.get("material"):
+        explanations.append(
+            f"We couldn't find {preferences['material']} products within your ${preferences['budget']} budget. "
+            f"However, we found {tradeoff_count} alternatives that offer great value!"
+        )
+    elif preferences.get("budget"):
+        explanations.append(
+            f"We found {tradeoff_count} product(s) within your ${preferences['budget']} budget. "
+            f"Each one has been analyzed for trade-offs to help you decide."
+        )
+    else:
+        explanations.append(
+            f"We found {tradeoff_count} product(s) that partially match your preferences. "
+            f"Check the trade-off analysis to see what you gain and lose with each option."
+        )
+
+    return " ".join(explanations)
 
 
 @app.post("/recommend/color", response_model=List[ProductRecommendation])
