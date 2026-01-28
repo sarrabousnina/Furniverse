@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useProducts } from '../../context/ProductsContext';
 import { useCart } from '../../context/CartContext';
 import { useRooms } from '../../context/RoomsContext';
@@ -25,8 +25,117 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  
+  // Carousel state and refs
+  const carouselRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
 
   const activeRoom = getActiveRoom();
+
+  // Carousel utility functions
+  const updateArrowVisibility = () => {
+    if (!carouselRef.current) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
+    setShowLeftArrow(scrollLeft > 0);
+    setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 1);
+  };
+
+  const scrollCarousel = (direction) => {
+    if (!carouselRef.current) return;
+    
+    const scrollAmount = 200; // Adjust scroll distance
+    const newScrollLeft = carouselRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+    
+    carouselRef.current.scrollTo({
+      left: newScrollLeft,
+      behavior: 'smooth'
+    });
+  };
+
+  // Mouse drag handlers
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - carouselRef.current.offsetLeft);
+    setScrollLeft(carouselRef.current.scrollLeft);
+    carouselRef.current.style.cursor = 'grabbing';
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+    if (carouselRef.current) {
+      carouselRef.current.style.cursor = 'grab';
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    if (carouselRef.current) {
+      carouselRef.current.style.cursor = 'grab';
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !carouselRef.current) return;
+    
+    e.preventDefault();
+    const x = e.pageX - carouselRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // Scroll speed multiplier
+    carouselRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  // Touch handlers for mobile
+  const handleTouchStart = (e) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX - carouselRef.current.offsetLeft);
+    setScrollLeft(carouselRef.current.scrollLeft);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging || !carouselRef.current) return;
+    
+    const x = e.touches[0].clientX - carouselRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    carouselRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  // Update arrow visibility on scroll
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+
+    const handleScroll = () => updateArrowVisibility();
+    carousel.addEventListener('scroll', handleScroll);
+    
+    // Initial check
+    updateArrowVisibility();
+    
+    return () => carousel.removeEventListener('scroll', handleScroll);
+  }, [product]);
+
+  // Handle thumbnail click with smooth scroll to center the selected thumbnail
+  const handleThumbnailClick = (idx) => {
+    setSelectedImage(idx);
+    
+    if (carouselRef.current) {
+      const thumbnail = carouselRef.current.children[idx];
+      if (thumbnail) {
+        const containerWidth = carouselRef.current.clientWidth;
+        const thumbnailLeft = thumbnail.offsetLeft;
+        const thumbnailWidth = thumbnail.offsetWidth;
+        const scrollTo = thumbnailLeft - (containerWidth / 2) + (thumbnailWidth / 2);
+        
+        carouselRef.current.scrollTo({
+          left: scrollTo,
+          behavior: 'smooth'
+        });
+      }
+    }
+  };
 
   // Fetch full product details from backend when modal opens
   useEffect(() => {
@@ -282,16 +391,53 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
                 className={styles.mainImage}
               />
               {currentData?.images && currentData.images.length > 1 && (
-                <div className={styles.thumbnails}>
-                  {currentData.images.map((img, idx) => (
-                    <img
-                      key={idx}
-                      src={img}
-                      alt={`${product.name} view ${idx + 1}`}
-                      className={`${styles.thumbnail} ${selectedImage === idx ? styles.active : ''}`}
-                      onClick={() => setSelectedImage(idx)}
-                    />
-                  ))}
+                <div className={styles.carouselContainer}>
+                  {showLeftArrow && (
+                    <button 
+                      className={`${styles.carouselArrow} ${styles.carouselArrowLeft}`}
+                      onClick={() => scrollCarousel('left')}
+                      aria-label="Previous images"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M15 18l-6-6 6-6" />
+                      </svg>
+                    </button>
+                  )}
+                  
+                  <div 
+                    ref={carouselRef}
+                    className={styles.thumbnailCarousel}
+                    onMouseDown={handleMouseDown}
+                    onMouseLeave={handleMouseLeave}
+                    onMouseUp={handleMouseUp}
+                    onMouseMove={handleMouseMove}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={() => setIsDragging(false)}
+                  >
+                    {currentData.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`${product.name} view ${idx + 1}`}
+                        className={`${styles.thumbnail} ${selectedImage === idx ? styles.active : ''}`}
+                        onClick={() => handleThumbnailClick(idx)}
+                        draggable={false}
+                      />
+                    ))}
+                  </div>
+                  
+                  {showRightArrow && (
+                    <button 
+                      className={`${styles.carouselArrow} ${styles.carouselArrowRight}`}
+                      onClick={() => scrollCarousel('right')}
+                      aria-label="Next images"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

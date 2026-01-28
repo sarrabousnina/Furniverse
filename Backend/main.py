@@ -328,80 +328,28 @@ class CSVProductRepository(ProductRepository):
             trending=trending
         )
     
-    def _group_products_by_name(self) -> List[Product]:
-        """Group products by name, treating different colors as variants"""
-        grouped = {}
-        
-        for product in self.products:
-            # Use name as the grouping key
-            key = product.name.strip()
-            
-            if key not in grouped:
-                # First variant becomes the base product
-                grouped[key] = product
-                grouped[key].variants = []
-            
-            # Create variant for this color
-            variant = ColorVariant(
-                id=product.id,
-                color=product.colors[0] if product.colors else "default",
-                price=product.price,
-                rating=product.rating,
-                reviewCount=product.reviewCount,
-                image=product.image,
-                images=product.images,
-                inStock=product.inStock,
-                dimensions=product.dimensions
-            )
-            grouped[key].variants.append(variant)
-        
-        # Update the colors list and set base price to minimum variant price
-        for product in grouped.values():
-            product.colors = [v.color for v in product.variants]
-            # Set base price to minimum of all variant prices
-            if product.variants:
-                product.price = min(v.price for v in product.variants)
-
-        return list(grouped.values())
-    
     def get_all(self) -> List[Product]:
-        """Get all products (grouped by name with color variants)"""
-        return self._group_products_by_name()
+        """Get all products (each variant listed separately)"""
+        return self.products
     
     def get_by_id(self, product_id: int) -> Optional[Product]:
-        """Get product by ID (returns grouped product with all variants)"""
-        # First find which ungrouped product matches the ID
-        matching_product = None
+        """Get product by ID (returns individual product)"""
         for product in self.products:
             if product.id == product_id:
-                matching_product = product
-                break
-        
-        if not matching_product:
-            return None
-        
-        # Find the grouped product that contains this variant
-        grouped_products = self._group_products_by_name()
-        for grouped in grouped_products:
-            # Check if any variant has this ID
-            if any(v.id == product_id for v in grouped.variants):
-                return grouped
-        
+                return product
         return None
     
     def get_by_category(self, category: str) -> List[Product]:
-        """Get products by category (case-insensitive, grouped by name)"""
+        """Get products by category (case-insensitive, each variant listed separately)"""
         category_lower = category.lower()
-        grouped_products = self._group_products_by_name()
-        return [p for p in grouped_products if p.category.lower() == category_lower]
+        return [p for p in self.products if p.category.lower() == category_lower]
     
     def search(self, query: str) -> List[Product]:
-        """Simple text search - placeholder for future vector search (grouped by name)"""
+        """Simple text search - placeholder for future vector search (each variant listed separately)"""
         query_lower = query.lower()
         results = []
-        grouped_products = self._group_products_by_name()
         
-        for product in grouped_products:
+        for product in self.products:
             # Search in name, description, tags, styles
             searchable = f"{product.name} {product.description} {' '.join(product.tags)} {' '.join(product.styles)}".lower()
             if query_lower in searchable:
