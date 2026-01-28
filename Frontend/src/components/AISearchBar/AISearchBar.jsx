@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { smartSearch } from '../../services/api';
+import { searchWithTradeoffs } from '../../services/api';
 import { useProducts } from '../../context/ProductsContext';
 import ProductCard from '../ProductCard/ProductCard';
+import TradeOffCard from '../TradeOffCard/TradeOffCard';
 import styles from './AISearchBar.module.css';
 
 const AISearchBar = ({ onResultsFound }) => {
@@ -29,19 +30,18 @@ const AISearchBar = ({ onResultsFound }) => {
     setResults(null);
 
     try {
-      const response = await smartSearch(query);
+      // Use trade-off search instead of smart search
+      const response = await searchWithTradeoffs(query);
 
-      console.log('AI Search Results:', response.products);
+      console.log('Trade-off Search Results:', response);
 
-      // Fetch full product details for each result by matching name
-      const productsWithDetails = response.products.map(p => {
-        // Try multiple matching strategies
+      // Helper function to match products
+      const matchProduct = (p) => {
         let fullProduct = products.find(prod =>
           prod.name.toLowerCase().includes(p.name.toLowerCase()) ||
           p.name.toLowerCase().includes(prod.name.toLowerCase())
         );
 
-        // If not found, try partial matching (first 3 words)
         if (!fullProduct) {
           const searchWords = p.name.toLowerCase().split(' ').slice(0, 3).join(' ');
           fullProduct = products.find(prod =>
@@ -50,23 +50,39 @@ const AISearchBar = ({ onResultsFound }) => {
           );
         }
 
-        console.log(`Matching "${p.name}" ->`, fullProduct ? fullProduct.name : 'NOT FOUND');
+        return fullProduct;
+      };
 
+      // Process exact matches
+      const exactMatchesWithDetails = (response.exact_matches || []).map(p => {
+        const fullProduct = matchProduct(p);
         return {
           ...p,
           fullProduct: fullProduct || null
         };
       }).filter(p => p.fullProduct !== null);
 
-      console.log('Final matched products:', productsWithDetails.map(p => p.fullProduct.name));
+      // Process trade-offs
+      const tradeOffsWithDetails = (response.trade_offs || []).map(p => {
+        const fullProduct = matchProduct(p);
+        return {
+          ...p,
+          fullProduct: fullProduct || null
+        };
+      }).filter(p => p.fullProduct !== null);
+
+      console.log('Exact matches:', exactMatchesWithDetails.length);
+      console.log('Trade-offs:', tradeOffsWithDetails.length);
 
       setResults({
         ...response,
-        products: productsWithDetails
+        exact_matches: exactMatchesWithDetails,
+        trade_offs: tradeOffsWithDetails
       });
 
       if (onResultsFound) {
-        onResultsFound(productsWithDetails);
+        const allResults = [...exactMatchesWithDetails, ...tradeOffsWithDetails];
+        onResultsFound(allResults);
       }
     } catch (err) {
       setError('Failed to search. Please try again.');
@@ -78,19 +94,17 @@ const AISearchBar = ({ onResultsFound }) => {
 
   const handleExampleClick = (exampleQuery) => {
     setQuery(exampleQuery);
-    // Trigger search automatically
+    // Trigger search automatically using trade-off search
     setTimeout(() => {
-      const syntheticEvent = { preventDefault: () => {} };
-      smartSearch(exampleQuery)
+      searchWithTradeoffs(exampleQuery)
         .then(response => {
-          const productsWithDetails = response.products.map(p => {
-            // Try to find product by name (case-insensitive)
+          // Helper function to match products
+          const matchProduct = (p) => {
             let fullProduct = products.find(prod =>
               prod.name.toLowerCase().includes(p.name.toLowerCase()) ||
               p.name.toLowerCase().includes(prod.name.toLowerCase())
             );
 
-            // If not found, try partial matching (first 3 words)
             if (!fullProduct) {
               const searchWords = p.name.toLowerCase().split(' ').slice(0, 3).join(' ');
               fullProduct = products.find(prod =>
@@ -99,6 +113,21 @@ const AISearchBar = ({ onResultsFound }) => {
               );
             }
 
+            return fullProduct;
+          };
+
+          // Process exact matches
+          const exactMatchesWithDetails = (response.exact_matches || []).map(p => {
+            const fullProduct = matchProduct(p);
+            return {
+              ...p,
+              fullProduct: fullProduct || null
+            };
+          }).filter(p => p.fullProduct !== null);
+
+          // Process trade-offs
+          const tradeOffsWithDetails = (response.trade_offs || []).map(p => {
+            const fullProduct = matchProduct(p);
             return {
               ...p,
               fullProduct: fullProduct || null
@@ -107,11 +136,13 @@ const AISearchBar = ({ onResultsFound }) => {
 
           setResults({
             ...response,
-            products: productsWithDetails
+            exact_matches: exactMatchesWithDetails,
+            trade_offs: tradeOffsWithDetails
           });
 
           if (onResultsFound) {
-            onResultsFound(productsWithDetails);
+            const allResults = [...exactMatchesWithDetails, ...tradeOffsWithDetails];
+            onResultsFound(allResults);
           }
         })
         .catch(err => {
@@ -203,7 +234,7 @@ const AISearchBar = ({ onResultsFound }) => {
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
               </svg>
-              AI Analysis
+              Trade-off Analysis
             </h3>
 
             <div className={styles.analysisContent}>
@@ -212,34 +243,60 @@ const AISearchBar = ({ onResultsFound }) => {
                 <span className={styles.analysisValue}>"{results.query}"</span>
               </div>
 
-              {results.budget_limit && (
-                <div className={styles.analysisItem}>
-                  <span className={styles.analysisLabel}>💰 Budget:</span>
-                  <span className={styles.analysisValue}>Under {results.budget_limit} TND</span>
-                </div>
+              {results.user_preferences && (
+                <>
+                  {results.user_preferences.budget && (
+                    <div className={styles.analysisItem}>
+                      <span className={styles.analysisLabel}>💰 Budget:</span>
+                      <span className={styles.analysisValue}>Under ${results.user_preferences.budget}</span>
+                    </div>
+                  )}
+                  {results.user_preferences.material && (
+                    <div className={styles.analysisItem}>
+                      <span className={styles.analysisLabel}>🎨 Material:</span>
+                      <span className={styles.analysisValue}>{results.user_preferences.material}</span>
+                    </div>
+                  )}
+                  {results.user_preferences.style && (
+                    <div className={styles.analysisItem}>
+                      <span className={styles.analysisLabel}>✨ Style:</span>
+                      <span className={styles.analysisValue}>{results.user_preferences.style}</span>
+                    </div>
+                  )}
+                  {results.user_preferences.color && (
+                    <div className={styles.analysisItem}>
+                      <span className={styles.analysisLabel}>🎨 Color:</span>
+                      <span className={styles.analysisValue}>{results.user_preferences.color}</span>
+                    </div>
+                  )}
+                </>
               )}
-
-              <div className={styles.analysisItem}>
-                <span className={styles.analysisLabel}>🎯 Strategy:</span>
-                <span className={styles.analysisValue}>
-                  {results.strategy === 'graph_substitutes' ? 'Smart Substitutes' : 'Direct Match'}
-                </span>
-              </div>
 
               {results.explanation && (
                 <div className={styles.explanation}>
                   <p>{results.explanation}</p>
                 </div>
               )}
+
+              <div className={styles.summaryStats}>
+                <div className={styles.stat}>
+                  <span className={styles.statValue}>{results.exact_matches?.length || 0}</span>
+                  <span className={styles.statLabel}>Perfect Matches</span>
+                </div>
+                <div className={styles.stat}>
+                  <span className={styles.statValue}>{results.trade_offs?.length || 0}</span>
+                  <span className={styles.statLabel}>Smart Alternatives</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Products Grid */}
-          {results.products && results.products.length > 0 && (
-            <>
-
+          {/* Exact Matches Section */}
+          {results.exact_matches && results.exact_matches.length > 0 && (
+            <div className={styles.resultsSection}>
+              <h4 className={styles.sectionTitle}>✅ Perfect Matches</h4>
               <div className={styles.productsGrid}>
-                {results.products.map((item) => (
+                {results.exact_matches.map((item) => (
                   <ProductCard
                     key={item.product_id}
                     product={item.fullProduct}
@@ -247,10 +304,30 @@ const AISearchBar = ({ onResultsFound }) => {
                   />
                 ))}
               </div>
-            </>
+            </div>
           )}
 
-          {results.products && results.products.length === 0 && (
+          {/* Trade-offs Section */}
+          {results.trade_offs && results.trade_offs.length > 0 && (
+            <div className={styles.resultsSection}>
+              <h4 className={styles.sectionTitle}>💡 Smart Alternatives (Trade-offs Analyzed)</h4>
+              <div className={styles.tradeOffsGrid}>
+                {results.trade_offs.map((item) => (
+                  <TradeOffCard
+                    key={item.product_id}
+                    product={{
+                      ...item,
+                      ...item.fullProduct
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No Results */}
+          {((!results.exact_matches || results.exact_matches.length === 0) &&
+            (!results.trade_offs || results.trade_offs.length === 0)) && (
             <div className={styles.noResults}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />

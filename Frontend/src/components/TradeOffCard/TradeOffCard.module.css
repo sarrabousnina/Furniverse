@@ -1,0 +1,262 @@
+/* TradeOffCard Styles */
+.tradeOffCard {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f6f3 100%);
+  border-radius: var(--radius-lg, 16px);
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid var(--color-accent, #0D4D4D);
+  transition: all 0.3s ease;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.tradeOffCard:hover {
+  box-shadow: 0 8px 30px rgba(13, 77, 77, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(13, 77, 77, 0.1);
+}
+
+.headerIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1A9E9E 0%, #0D4D4D 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.headerIcon svg {
+  width: 24px;
+  height: 24px;
+  stroke: white;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a1a1a);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary, #666);
+  margin: 4px 0 0 0;
+}
+
+/* Product Preview */
+.productPreview {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--color-bg, #F5F3EF);
+  border-radius: var(--radius-md, 12px);
+}
+
+.productImage {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.productImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.productInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.productName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1a1a1a);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.productPrice {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-accent, #0D4D4D);
+  margin: 0;
+}
+
+/* Analysis Section */
+.analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.gains,
+.loses {
+  border-radius: var(--radius-md, 12px);
+  padding: 16px;
+}
+
+.gains {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.03) 100%);
+  border: 1.5px solid rgba(34, 197, 94, 0.2);
+}
+
+.loses {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.03) 100%);
+  border: 1.5px solid rgba(239, 68, 68, 0.2);
+}
+
+.analysisHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.analysisHeader svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.gains .analysisHeader svg {
+  stroke: #22c55e;
+}
+
+.loses .analysisHeader svg {
+  stroke: #ef4444;
+}
+
+.analysisHeader h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.gains .analysisHeader h4 {
+  color: #16a34a;
+}
+
+.loses .analysisHeader h4 {
+  color: #dc2626;
+}
+
+/* Lists */
+.gainsList,
+.losesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.gainItem,
+.lossItem {
+  font-size: 14px;
+  padding: 8px 0;
+  padding-left: 28px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.gainItem {
+  color: #15803d;
+}
+
+.gainItem::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  font-weight: 700;
+  color: #22c55e;
+}
+
+.lossItem {
+  color: #b91c1c;
+}
+
+.lossItem::before {
+  content: '✗';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.addToCartButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #1A9E9E 0%, #0D4D4D 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md, 10px);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addToCartButton:hover {
+  background: linear-gradient(135deg, #0D4D4D 0%, #1A9E9E 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 158, 158, 0.4);
+}
+
+.addToCartButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tradeOffCard {
+    padding: 20px;
+  }
+
+  .productPreview {
+    flex-direction: column;
+  }
+
+  .productImage {
+    width: 100%;
+    height: 200px;
+  }
+
+  .productInfo {
+    text-align: center;
+  }
+}
