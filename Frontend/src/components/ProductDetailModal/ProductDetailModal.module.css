@@ -190,10 +190,75 @@
   background: var(--color-bg, #F5F3EF);
 }
 
-.thumbnails {
+.carouselContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+}
+
+.carouselArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+  opacity: 0.9;
+}
+
+.carouselArrow:hover {
+  background: rgba(255, 255, 255, 1);
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.carouselArrowLeft {
+  left: 8px;
+}
+
+.carouselArrowRight {
+  right: 8px;
+}
+
+.carouselArrow svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--color-text-primary, #1a1a1a);
+  stroke-width: 2;
+}
+
+.thumbnailCarousel {
   display: flex;
   gap: var(--spacing-sm, 8px);
   overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: var(--spacing-xs, 4px) 0;
+  cursor: grab;
+  user-select: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  max-width: 520px; /* Shows exactly 6 thumbnails: (6 × 80px) + (5 × 8px gaps) = 520px */
+  width: 100%;
+}
+
+.thumbnailCarousel::-webkit-scrollbar {
+  display: none;
+}
+
+.thumbnailCarousel:active {
+  cursor: grabbing;
 }
 
 .thumbnail {
@@ -205,19 +270,41 @@
   object-position: center;
   border-radius: var(--radius-md, 10px);
   cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.2s ease;
+  border: 3px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
   background: var(--color-bg, #F5F3EF);
+  position: relative;
+  overflow: hidden;
+}
+
+.thumbnail::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: all 0.3s ease;
+  pointer-events: none;
 }
 
 .thumbnail:hover {
   border-color: var(--color-accent, #0D4D4D);
-  transform: scale(1.05);
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.thumbnail:hover::before {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .thumbnail.active {
   border-color: var(--color-accent, #0D4D4D);
+  transform: scale(1.08) translateY(-3px);
+  box-shadow: 0 12px 30px rgba(13, 77, 77, 0.25);
+}
+
+.thumbnail.active::before {
+  background: rgba(13, 77, 77, 0.1);
 }
 
 .details {
