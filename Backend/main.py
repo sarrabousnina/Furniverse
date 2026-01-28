@@ -16,6 +16,7 @@ from qdrant_client.models import Filter, FieldCondition, MatchValue, PayloadSche
 import qdrant_config
 from transformers import CLIPModel as HFCLIPModel, CLIPProcessor
 import numpy as np
+from user_activity import tracker, UserEvent
 
 
 # ============================================================================
@@ -965,3 +966,110 @@ def get_stats():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
+
+
+# ============================================================================
+# Product → User Recommendations (User Activity Tracking)
+# ============================================================================
+
+class TrackEventRequest(BaseModel):
+    """Request model for tracking user events"""
+    user_id: str
+    event_type: str  # 'view', 'click', 'search'
+    product_id: Optional[str] = None
+    product_name: Optional[str] = None
+    category: Optional[str] = None
+    price: Optional[float] = None
+    search_query: Optional[str] = None
+
+
+@app.post("/track")
+def track_user_event(request: TrackEventRequest):
+    """
+    Track user interaction events (Product → User foundation)
+    Stores: views, clicks, searches to build user preference profiles
+    """
+    try:
+        event = UserEvent(
+            user_id=request.user_id,
+            event_type=request.event_type,
+            product_id=request.product_id or "",
+            product_name=request.product_name or "",
+            category=request.category or "",
+            price=request.price or 0.0,
+            search_query=request.search_query
+        )
+
+        tracker.track_event(event)
+
+        return {
+            "status": "tracked",
+            "user_id": request.user_id,
+            "event_type": request.event_type,
+            "timestamp": event.timestamp
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to track event: {str(e)}")
+
+
+@app.get("/users/interested-in/{product_id}")
+def find_interested_users(
+    product_id: str,
+    product_name: str = Query(..., description="Product name for similarity matching"),
+    category: str = Query(..., description="Product category"),
+    limit: int = Query(10, description="Number of users to return")
+):
+    """
+    Product → User Recommendation: Find users who would be interested in a product
+
+    Use case: When admin creates a discount, find users who interacted with similar products
+    Uses semantic similarity between product and user preference embeddings
+    """
+    try:
+        interested_users = tracker.find_interested_users(
+            product_id=product_id,
+            product_name=product_name,
+            category=category,
+            limit=limit
+        )
+
+        return {
+            "product_id": product_id,
+            "product_name": product_name,
+            "category": category,
+            "interested_users": interested_users,
+            "total_count": len(interested_users)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to find interested users: {str(e)}")
+
+
+@app.get("/users/{user_id}/activity")
+def get_user_activity(user_id: str):
+    """Get activity summary for a specific user"""
+    try:
+        summary = tracker.get_user_activity_summary(user_id)
+        return summary
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get user activity: {str(e)}")
+
+
+@app.get("/users/stats")
+def get_user_stats():
+    """Get statistics about tracked users from Qdrant"""
+    try:
+        from user_activity import tracker
+
+        # Get collection info from Qdrant
+        collection_info = tracker.qdrant_client.get_collection('users')
+
+        return {
+            "total_users": collection_info.points_count,
+            "total_vectors": collection_info.vectors_count,
+            "users_indexed": collection_info.points_count,
+            "storage": "qdrant_cloud",
+            "status": "ready"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get user stats: {str(e)}")
+

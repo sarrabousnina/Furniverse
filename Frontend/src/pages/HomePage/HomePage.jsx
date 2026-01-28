@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -10,6 +10,7 @@ import { useProducts } from '../../context/ProductsContext';
 import { useDiscounts } from '../../context/DiscountContext';
 import { CATEGORIES } from '../../data/products';
 import { getRecommendedProducts } from '../../utils/recommendations';
+import { getUserActivity, getRecentlyViewed } from '../../utils/userTracking';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from './HomePage.module.css';
 
@@ -18,6 +19,7 @@ const HomePage = () => {
   const { products, loading, error, getTrendingProducts } = useProducts();
   const { hasDiscount } = useDiscounts();
   const activeRoom = getActiveRoom();
+  const [personalizedProducts, setPersonalizedProducts] = useState([]);
 
   // Get trending products
   const trendingProducts = getTrendingProducts().slice(0, 8);
@@ -31,6 +33,48 @@ const HomePage = () => {
   const recommendedProducts = activeRoom
     ? getRecommendedProducts(activeRoom, products, 8)
     : [];
+
+  // Get personalized products based on browsing history
+  useEffect(() => {
+    const getPersonalizedProducts = () => {
+      const activity = getUserActivity();
+      const recentlyViewed = getRecentlyViewed(8);
+
+      if (!recentlyViewed || recentlyViewed.length === 0) {
+        return [];
+      }
+
+      // Get top categories from user activity
+      const categoryCounts = {};
+      [...(activity.productViews || []), ...(activity.productClicks || [])].forEach(event => {
+        if (event.category) {
+          categoryCounts[event.category] = (categoryCounts[event.category] || 0) + 1;
+        }
+      });
+
+      // Get top 3 categories
+      const topCategories = Object.entries(categoryCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([cat]) => cat);
+
+      if (topCategories.length === 0) return [];
+
+      // Find products in those categories, excluding recently viewed
+      const viewedIds = new Set(recentlyViewed.map(item => parseInt(item.productId)));
+      const categoryProducts = products.filter(p =>
+        topCategories.includes(p.category) &&
+        !viewedIds.has(p.id)
+      );
+
+      // Return up to 8 products, shuffled for variety
+      return categoryProducts
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 8);
+    };
+
+    setPersonalizedProducts(getPersonalizedProducts());
+  }, [products]);
 
   if (loading) {
     return (
@@ -227,6 +271,41 @@ const HomePage = () => {
         </section>
       )}
 
+      {/* Recommended For You - Based on Browsing History */}
+      {!activeRoom && personalizedProducts.length > 0 && (
+        <section className={styles.container}>
+          <div className={styles.sectionHeader}>
+            <motion.div
+              className={styles.recommendationBadge}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              Based on your interests
+            </motion.div>
+            <h2 className={styles.sectionTitle}>Recommended For You</h2>
+            <p className={styles.sectionSubtitle}>
+              Curated picks based on what you've been browsing
+            </p>
+          </div>
+          <div className={styles.productsGrid}>
+            {personalizedProducts.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                style={{ animationDelay: `${index * 50}ms` }}
+              />
+            ))}
+          </div>
+          <Link to="/shop" className={styles.viewAllLink}>
+            Browse All Products →
+          </Link>
+        </section>
+      )}
+
       {/* Trending Products */}
       <section className={styles.container}>
         <div className={styles.sectionHeader}>
@@ -279,7 +358,7 @@ const HomePage = () => {
               />
             ))}
           </div>
-          <Link to="/shop" className={styles.viewAllLink}>
+          <Link to="/shop?discount=true" className={styles.viewAllLink}>
             Shop All Discounts →
           </Link>
         </section>

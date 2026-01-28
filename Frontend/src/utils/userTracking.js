@@ -1,6 +1,8 @@
 const STORAGE_KEY = 'furniverse_user_activity';
+const USER_ID_KEY = 'furniverse_user_id';
 const MAX_SEARCHES = 100;
 const MAX_VIEWS = 200;
+const API_BASE_URL = 'http://localhost:8000';
 
 // Get all user activity from localStorage
 const getActivity = () => {
@@ -25,6 +27,42 @@ const saveActivity = (activity) => {
   }
 };
 
+// Get or create user ID
+export const getUserId = () => {
+  try {
+    let userId = localStorage.getItem(USER_ID_KEY);
+    if (!userId) {
+      // Generate a unique user ID
+      userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem(USER_ID_KEY, userId);
+    }
+    return userId;
+  } catch (error) {
+    console.error('Error getting user ID:', error);
+    return 'user_anonymous';
+  }
+};
+
+// Send event to backend for Product → User recommendations
+const sendEventToBackend = async (eventData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(eventData),
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to send event to backend:', response.statusText);
+    }
+  } catch (error) {
+    // Silent fail - backend tracking is optional
+    console.warn('Could not connect to backend for tracking:', error.message);
+  }
+};
+
 // Track a search query
 export const trackSearch = (query) => {
   if (!query || typeof query !== 'string') return;
@@ -42,6 +80,13 @@ export const trackSearch = (query) => {
   }
 
   saveActivity(activity);
+
+  // Send to backend for Product → User recommendations
+  sendEventToBackend({
+    user_id: getUserId(),
+    event_type: 'search',
+    search_query: query.trim()
+  });
 };
 
 // Track when a user views a product (opens modal/detail page)
@@ -64,6 +109,16 @@ export const trackProductView = (product) => {
   }
 
   saveActivity(activity);
+
+  // Send to backend for Product → User recommendations
+  sendEventToBackend({
+    user_id: getUserId(),
+    event_type: 'view',
+    product_id: String(product.id),
+    product_name: product.name,
+    category: product.category,
+    price: product.price
+  });
 };
 
 // Track when a user clicks on a product card
@@ -86,6 +141,16 @@ export const trackProductClick = (product) => {
   }
 
   saveActivity(activity);
+
+  // Send to backend for Product → User recommendations
+  sendEventToBackend({
+    user_id: getUserId(),
+    event_type: 'click',
+    product_id: String(product.id),
+    product_name: product.name,
+    category: product.category,
+    price: product.price
+  });
 };
 
 // Get all tracked activity
