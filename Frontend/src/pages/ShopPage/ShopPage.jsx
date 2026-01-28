@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProducts } from '../../context/ProductsContext';
+import { useDiscounts } from '../../context/DiscountContext';
 import { CATEGORIES } from '../../data/products';
 import { getRecommendedProducts } from '../../utils/recommendations';
 import { useRooms } from '../../context/RoomsContext';
@@ -12,8 +13,10 @@ const ShopPage = () => {
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
   const searchParam = searchParams.get('search');
+  const discountParam = searchParams.get('discount') === 'true';
   const { products, loading, error } = useProducts();
   const { rooms, getActiveRoom } = useRooms();
+  const { hasDiscount } = useDiscounts();
   const activeRoom = getActiveRoom();
 
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -56,6 +59,11 @@ const ShopPage = () => {
       productsList = productsList.filter(
         p => p.category.toLowerCase() === categoryParam.toLowerCase()
       );
+    }
+
+    // Filter by discount
+    if (discountParam) {
+      productsList = productsList.filter(p => hasDiscount(p.id));
     }
 
     // Filter by selected categories
@@ -161,14 +169,20 @@ const ShopPage = () => {
         {/* Header */}
         <div className={styles.header}>
           <h1 className={styles.title}>
-            {searchParam
+            {discountParam
+              ? 'Discounted Products'
+              : searchParam
               ? `Search results for "${searchParam}"`
               : categoryParam
               ? CATEGORIES.find(c => c.id === categoryParam)?.name || 'All Products'
               : 'Shop All Furniture'}
+          
           </h1>
           <p className={styles.subtitle}>
-            {filteredProducts.length} products found
+            {discountParam
+              ? `${filteredProducts.length} discounted products`
+              : `${filteredProducts.length} products found`
+            }
           </p>
         </div>
 

@@ -138,3 +138,86 @@ export const smartSearch = async (query, category = null, limit = 8) => {
     throw error;
   }
 };
+
+// ============================================================================
+// Product → User Recommendations (User Activity)
+// ============================================================================
+
+/**
+ * Find users interested in a product
+ * Used by admin when creating discounts to find which users to notify
+ */
+export const findInterestedUsers = async (productId, productName, category, limit = 10) => {
+  try {
+    const params = new URLSearchParams({
+      product_name: productName,
+      category: category,
+      limit: limit.toString()
+    });
+
+    const response = await fetch(`${API_BASE_URL}/users/interested-in/${productId}?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to find interested users: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error finding interested users:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get user activity summary
+ */
+export const getUserActivity = async (userId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/activity`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get user activity: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error getting user activity:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get user statistics (total users, events tracked)
+ */
+export const getUserStats = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/stats`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get user stats: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error getting user stats:', error);
+    throw error;
+  }
+};

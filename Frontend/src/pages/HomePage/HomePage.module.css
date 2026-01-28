@@ -448,3 +448,24 @@
   margin-top: var(--spacing-lg, 24px);
 }
 
+/* Recommendation Badge */
+.recommendationBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  background: linear-gradient(135deg, #0D4D4D 0%, #1A9E9E 100%);
+  color: white;
+  border-radius: var(--radius-lg, 16px);
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md, 16px);
+  box-shadow: 0 4px 12px rgba(13, 77, 77, 0.3);
+}
+
+.recommendationBadge svg {
+  width: 18px;
+  height: 18px;
+}
+
+
