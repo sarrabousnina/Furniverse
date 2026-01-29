@@ -65,7 +65,7 @@
 }
 
 .inputWrapper:focus-within {
-  border-color: var(--color-accent);
+  border-color: transparent;
   box-shadow:
     0 0 0 3px rgba(26, 158, 158, 0.1),
     0 4px 12px rgba(26, 158, 158, 0.15);
@@ -84,7 +84,7 @@
   background: transparent;
   font-size: 1rem;
   color: var(--color-text-primary);
-  outline: none;
+  outline: transparent !important;
   padding: var(--spacing-sm, 8px) 0;
 }
 
@@ -92,6 +92,7 @@
   color: var(--color-text-secondary);
   opacity: 0.7;
 }
+
 
 .searchInput:disabled {
   opacity: 0.6;
