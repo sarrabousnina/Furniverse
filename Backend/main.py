@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -7,6 +7,8 @@ import pandas as pd
 from pathlib import Path
 import sys
 import os
+from PIL import Image
+from io import BytesIO
 
 # Add Pipeline directory to path to import qdrant_config
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'Pipeline'))
@@ -1168,6 +1170,93 @@ def smart_recommend(request: RecommendRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
+@app.post("/recommend/image")
+async def recommend_by_image(
+    file: UploadFile = File(...),
+    category: Optional[str] = None,
+    limit: int = 8
+):
+    """
+    Search products by uploaded image using CLIP image embeddings
+    
+    Accepts an image file and returns visually similar products by:
+    1. Encoding the uploaded image using the same CLIP model used for product images
+    2. Searching Qdrant's image_clip vector (512d) for similar products
+    3. Applying category filters if specified
+    
+    Args:
+        file: Uploaded image file (JPEG, PNG, WebP)
+        category: Optional category filter (e.g., 'sofas', 'tables')
+        limit: Maximum number of results to return (default: 8)
+    
+    Returns:
+        List of visually similar products with similarity scores
+    """
+    if not qdrant_client or not clip_model or not clip_processor:
+        raise HTTPException(status_code=503, detail="AI service not initialized")
+    
+    try:
+        # Validate file type
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image (JPEG, PNG, WebP)")
+        
+        # Read uploaded file and convert to PIL Image
+        image_bytes = await file.read()
+        
+        # Validate file size (max 10MB)
+        if len(image_bytes) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Image file too large (max 10MB)")
+        
+        try:
+            image = Image.open(BytesIO(image_bytes)).convert('RGB')
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
+        
+        # Generate CLIP image embedding (512 dimensions)
+        inputs = clip_processor(images=image, return_tensors="pt")
+        with torch.no_grad():
+            image_features = clip_model.get_image_features(**inputs)
+        query_embedding = image_features.detach().numpy()[0].tolist()
+        
+        # Build category filter
+        filters = []
+        if category and category != 'all':
+            filters.append(FieldCondition(key="category", match=MatchValue(value=category)))
+        
+        search_filter = Filter(must=filters) if filters else None
+        
+        # Search Qdrant with image_clip vector
+        results = qdrant_client.search(
+            collection_name=qdrant_config.COLLECTION_PRODUCTS,
+            query_vector=("image_clip", query_embedding),
+            limit=limit,
+            query_filter=search_filter,
+            with_payload=True,
+            score_threshold=0.5  # Reasonable threshold for visual similarity
+        )
+        
+        # Format response
+        recommendations = []
+        for result in results:
+            payload = result.payload
+            recommendations.append({
+                "product_id": payload.get('product_id'),
+                "name": payload.get('name'),
+                "category": payload.get('category'),
+                "price": payload.get('price'),
+                "score": round(result.score, 4),
+                "image": payload.get('image'),
+                "description": payload.get('description', '')[:150]
+            })
+        
+        return recommendations
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image search failed: {str(e)}")
 
 
 @app.post("/search/tradeoffs")

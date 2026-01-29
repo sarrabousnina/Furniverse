@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { smartSearch } from "../../services/api";
+import React, { useState, useRef } from "react";
+import { smartSearch, searchByImage } from "../../services/api";
 import { useProducts } from "../../context/ProductsContext";
 import ProductCard from "../ProductCard/ProductCard";
 import styles from "./AISearchBar.module.css";
@@ -9,6 +9,10 @@ const AISearchBar = ({ onResultsFound }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [searchMode, setSearchMode] = useState("text"); // "text" or "image"
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
   const { products } = useProducts();
 
   const exampleQueries = [
@@ -18,6 +22,86 @@ const AISearchBar = ({ onResultsFound }) => {
     "Velvet chair for bedroom",
     "Storage bed with budget of 1000",
   ];
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError("Please upload an image file (JPEG, PNG, WebP)");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image file too large (max 10MB)");
+      return;
+    }
+
+    setSelectedImage(file);
+    setError(null);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Automatically search with image
+    handleImageSearch(file);
+  };
+
+  const handleImageSearch = async (imageFile) => {
+    if (!imageFile) return;
+
+    setIsSearching(true);
+    setError(null);
+    setResults(null);
+
+    try {
+      const imageResults = await searchByImage(imageFile);
+      console.log("Image Search Results:", imageResults);
+
+      // Match products from response
+      const matchedProducts = imageResults
+        .map((p) => {
+          const fullProduct = products.find(
+            (prod) => String(prod.id) === String(p.product_id)
+          );
+          return fullProduct ? { ...p, fullProduct } : null;
+        })
+        .filter((p) => p !== null);
+
+      // Format as results similar to text search
+      setResults({
+        query: "Image Search",
+        perfect_matches: matchedProducts,
+        alternatives: [],
+        over_budget_options: [],
+        explanation: `Found ${matchedProducts.length} visually similar products`,
+      });
+
+      if (onResultsFound) {
+        onResultsFound(matchedProducts);
+      }
+    } catch (err) {
+      setError("Image search failed. Please try again.");
+      console.error("Image search error:", err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setResults(null);
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -202,43 +286,135 @@ const AISearchBar = ({ onResultsFound }) => {
 
   return (
     <div className={styles.aiSearchSection}>
-      {/* Search Form */}
-      <form onSubmit={handleSearch} className={styles.searchForm}>
-        <div className={styles.inputWrapper}>
-          <svg
-            className={styles.searchIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+      {/* Search Mode Tabs */}
+      <div className={styles.searchModeTabs}>
+        <button
+          type="button"
+          className={`${styles.modeTab} ${searchMode === "text" ? styles.activeTab : ""}`}
+          onClick={() => {
+            setSearchMode("text");
+            clearImage();
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>
+          Text Search
+        </button>
+        <button
+          type="button"
+          className={`${styles.modeTab} ${searchMode === "image" ? styles.activeTab : ""}`}
+          onClick={() => setSearchMode("image")}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          Image Search
+        </button>
+      </div>
+
+      {/* Text Search Form */}
+      {searchMode === "text" && (
+        <form onSubmit={handleSearch} className={styles.searchForm}>
+          <div className={styles.inputWrapper}>
+            <svg
+              className={styles.searchIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g., 'Comfy blue sofa under 500' or 'Leather couch for my living room'"
+              className={styles.searchInput}
+              disabled={isSearching}
+            />
+            <button
+              type="submit"
+              className={styles.searchButton}
+              disabled={isSearching || !query.trim()}
+            >
+              {isSearching ? (
+                <>
+                  <span className={styles.spinner}></span>
+                  Searching...
+                </>
+              ) : (
+                <>Search</>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Image Search Form */}
+      {searchMode === "image" && (
+        <div className={styles.imageSearchForm}>
           <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g., 'Comfy blue sofa under 500' or 'Leather couch for my living room'"
-            className={styles.searchInput}
-            disabled={isSearching}
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleImageUpload}
+            className={styles.fileInput}
+            id="imageUpload"
           />
-          <button
-            type="submit"
-            className={styles.searchButton}
-            disabled={isSearching || !query.trim()}
-          >
-            {isSearching ? (
-              <>
-                <span className={styles.spinner}></span>
-                Searching...
-              </>
-            ) : (
-              <>Search</>
-            )}
-          </button>
+          
+          {!imagePreview ? (
+            <label htmlFor="imageUpload" className={styles.uploadLabel}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <span className={styles.uploadText}>
+                <strong>Click to upload an image</strong>
+                <span className={styles.uploadHint}>or drag and drop</span>
+                <span className={styles.uploadFormats}>PNG, JPG, WebP (max 10MB)</span>
+              </span>
+            </label>
+          ) : (
+            <div className={styles.imagePreviewContainer}>
+              <img src={imagePreview} alt="Upload preview" className={styles.imagePreview} />
+              <div className={styles.imageActions}>
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className={styles.clearImageButton}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  Clear Image
+                </button>
+                <label htmlFor="imageUpload" className={styles.changeImageButton}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  Upload Different Image
+                </label>
+              </div>
+              {isSearching && (
+                <div className={styles.searchingOverlay}>
+                  <span className={styles.spinner}></span>
+                  Searching for similar products...
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </form>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -257,8 +433,8 @@ const AISearchBar = ({ onResultsFound }) => {
         </div>
       )}
 
-      {/* Examples */}
-      {!results && !error && (
+      {/* Examples - Only show for text search */}
+      {searchMode === "text" && !results && !error && (
         <div className={styles.examplesSection}>
           <p className={styles.examplesLabel}>💡 Try these examples:</p>
           <div className={styles.examplesList}>
