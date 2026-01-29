@@ -15,6 +15,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue, PayloadSchemaType, Prefetch, Query as QdrantQuery, QueryRequest
 import qdrant_config
 from transformers import CLIPModel as HFCLIPModel, CLIPProcessor
+import torch
 import numpy as np
 from user_activity import tracker, UserEvent
 import embedding_tradeoff
@@ -544,7 +545,7 @@ def recommend_by_text(request: RecommendRequest):
         text_features = clip_model.get_text_features(**inputs)
         query_embedding = text_features.detach().numpy()[0].tolist()
         
-        # Search in Qdrant using image_clip vectors (512 dims)
+        # Search in Qdrant using text_clip vectors (512 dims) - FIXED: was using image_clip
         search_filter = None
         if request.category and request.category != 'all':
             search_filter = Filter(
@@ -558,7 +559,7 @@ def recommend_by_text(request: RecommendRequest):
         
         search_results = qdrant_client.search(
             collection_name=qdrant_config.COLLECTION_PRODUCTS,
-            query_vector=("image_clip", query_embedding),
+            query_vector=("text_clip", query_embedding),
             limit=request.limit or 8,
             query_filter=search_filter,
             with_payload=True
@@ -665,16 +666,34 @@ def fusion_recommend(request: RecommendRequest):
         budget_match = re.search(r'under\s+\$?(\d+)', request.query.lower())
         max_price = float(budget_match.group(1)) if budget_match else None
         
+        # Dataset-specific color keywords (28 colors from CSV analysis)
+        color_keywords = ['white', 'black', 'gray', 'grey', 'brown', 'beige', 'blue', 'dark blue', 
+                         'light blue', 'turquoise', 'green', 'dark green', 'light green', 'red', 
+                         'pink', 'purple', 'yellow', 'orange', 'natural', 'oak', 'walnut', 'birch',
+                         'anthracite', 'off-white', 'cream', 'multicolor', 'transparent', 'gold']
+        
         # Extract materials/colors
         materials = []
+        colors = []
         material_keywords = ['leather', 'velvet', 'fabric', 'wood', 'metal', 'cotton', 'linen']
         query_lower = request.query.lower()
+        
         for material in material_keywords:
             if material in query_lower:
                 materials.append(material)
         
-        # Generate CLIP text embedding
-        inputs = clip_processor(text=[request.query], return_tensors="pt", padding=True, truncation=True)
+        for color in color_keywords:
+            if color in query_lower:
+                colors.append(color)
+        
+        # Generate CLIP text embedding with color emphasis
+        query_text = request.query
+        if colors:
+            # Boost color keywords by repeating them
+            color_boost = " ".join(colors * 3)
+            query_text = f"{request.query} {color_boost}"
+        
+        inputs = clip_processor(text=[query_text], return_tensors="pt", padding=True, truncation=True)
         text_features = clip_model.get_text_features(**inputs)
         clip_embedding = text_features.detach().numpy()[0]
         
@@ -695,10 +714,10 @@ def fusion_recommend(request: RecommendRequest):
         try:
             from qdrant_client.models import ScoredPoint
             
-            # Primary search: CLIP embeddings (60% weight)
+            # Primary search: CLIP text embeddings (50% weight) - FIXED: was using image_clip
             clip_results = qdrant_client.search(
                 collection_name=qdrant_config.COLLECTION_PRODUCTS,
-                query_vector=("image_clip", clip_embedding.tolist()),
+                query_vector=("text_clip", clip_embedding.tolist()),
                 limit=20,  # Get more candidates for fusion
                 query_filter=search_filter,
                 with_payload=True,
@@ -828,145 +847,325 @@ def fusion_recommend(request: RecommendRequest):
 @app.post("/recommend/smart")
 def smart_recommend(request: RecommendRequest):
     """
-    Smart budget-aware recommendation with fallback strategy
+    Smart recommendation with transparent compromise analysis
     
-    Pipeline:
-    1. Extract CLIP text embedding from query
-    2. Search with text embedding + optional filters
-    3. If budget constraint specified, apply price filter
-    4. If no results, use graph embeddings to find substitutes
-    5. Return with explanations
+    No hard cutoffs - just explain what you gain and lose with each option:
+    - Perfect matches: ≥0.67 similarity + within budget + matches color/material requirements
+    - Alternatives: ≥0.67 similarity + within budget + wrong color/missing materials (compromises explained)
+    - Over-budget options: ≥0.67 similarity + over budget (with price compromise)
+    
+    Each product shows specific trade-offs against user requirements
     """
+    
+    def parse_user_requirements(query_text):
+        """Extract user requirements from query"""
+        import re
+        query_lower = query_text.lower()
+        
+        requirements = {
+            'budget': None,
+            'colors': [],
+            'materials': [],
+            'styles': [],
+            'sizes': [],
+            'features': [],
+            'raw_query': query_text
+        }
+        
+        # Budget
+        budget_match = re.search(r'under\s+\$?(\d+)', query_lower)
+        if budget_match:
+            requirements['budget'] = float(budget_match.group(1))
+        
+        # Colors
+        color_keywords = ['blue', 'red', 'white', 'black', 'gray', 'grey', 'green', 'yellow', 'pink', 'purple', 'brown', 'beige', 'orange']
+        for color in color_keywords:
+            if color in query_lower:
+                requirements['colors'].append(color)
+        
+        # Materials
+        material_keywords = ['leather', 'velvet', 'fabric', 'wood', 'metal', 'cotton', 'linen', 'suede', 'wool']
+        for material in material_keywords:
+            if material in query_lower:
+                requirements['materials'].append(material)
+        
+        # Styles
+        style_keywords = ['modern', 'contemporary', 'traditional', 'rustic', 'industrial', 'scandinavian', 'minimalist', 'vintage']
+        for style in style_keywords:
+            if style in query_lower:
+                requirements['styles'].append(style)
+        
+        # Sizes
+        size_keywords = ['large', 'small', 'compact', 'spacious', 'sectional', 'oversized']
+        for size in size_keywords:
+            if size in query_lower:
+                requirements['sizes'].append(size)
+        
+        # Features
+        feature_keywords = ['storage', 'adjustable', 'convertible', 'sleeper', 'reclining', 'chaise', 'comfortable', 'comfy']
+        for feature in feature_keywords:
+            if feature in query_lower:
+                requirements['features'].append(feature)
+        
+        return requirements
+    
+    def analyze_compromises(product, user_reqs, similarity_score):
+        """
+        Analyze what compromises this product requires vs user requirements
+        Returns natural language advantages and disadvantages
+        """
+        advantages = []
+        disadvantages = []
+        compromise_score = 0  # Higher = better match
+        
+        product_name = product.get('name', '').lower()
+        product_desc = product.get('description', '').lower()
+        product_colors = [c.lower() for c in product.get('colors', [])]
+        product_tags = [t.lower() for t in product.get('tags', [])]
+        product_price = product.get('price', 0)
+        
+        # Budget Analysis
+        if user_reqs['budget']:
+            price_diff = product_price - user_reqs['budget']
+            price_percent = (price_diff / user_reqs['budget'] * 100) if user_reqs['budget'] > 0 else 0
+            
+            if price_diff <= 0:
+                under_by = abs(price_diff)
+                if under_by > user_reqs['budget'] * 0.1:  # More than 10% under
+                    advantages.append(f"${under_by:.0f} under budget ({abs(price_percent):.0f}% savings)")
+                    compromise_score += 10
+                else:
+                    advantages.append(f"Within budget")
+                    compromise_score += 15
+            else:
+                disadvantages.append(f"${price_diff:.0f} over budget (+{price_percent:.0f}%)")
+                compromise_score -= price_percent / 10  # Penalty scales with overage
+        
+        # Color Analysis
+        if user_reqs['colors']:
+            requested_colors = user_reqs['colors']
+            matching_colors = [c for c in requested_colors if any(c in pc for pc in product_colors)]
+            
+            if matching_colors:
+                advantages.append(f"Exact {', '.join(matching_colors)} color match")
+                compromise_score += 10 * len(matching_colors)
+            else:
+                if product_colors:
+                    disadvantages.append(f"Different color: {', '.join(product_colors[:2])}")
+                    compromise_score -= 8
+                else:
+                    disadvantages.append(f"Color not specified")
+                    compromise_score -= 5
+        
+        # Material Analysis
+        if user_reqs['materials']:
+            for material in user_reqs['materials']:
+                if material in product_desc or material in product_name or any(material in tag for tag in product_tags):
+                    advantages.append(f"Has requested {material}")
+                    compromise_score += 8
+                else:
+                    disadvantages.append(f"Missing {material}")
+                    compromise_score -= 6
+        
+        # Style Analysis
+        if user_reqs['styles']:
+            for style in user_reqs['styles']:
+                if style in product_desc or style in product_name or any(style in tag for tag in product_tags):
+                    advantages.append(f"{style.capitalize()} style as requested")
+                    compromise_score += 5
+        
+        # Size Analysis
+        if user_reqs['sizes']:
+            for size in user_reqs['sizes']:
+                if size in product_name or size in product_desc:
+                    advantages.append(f"{size.capitalize()} size as requested")
+                    compromise_score += 5
+        
+        # Features Analysis
+        if user_reqs['features']:
+            for feature in user_reqs['features']:
+                if feature in product_desc or feature in product_name or any(feature in tag for tag in product_tags):
+                    advantages.append(f"Has {feature} feature")
+                    compromise_score += 5
+        
+        # General product advantages (even if not requested)
+        quality_indicators = ['premium', 'luxury', 'durable', 'solid wood', 'genuine', 'high-quality']
+        for indicator in quality_indicators:
+            if indicator in product_desc or any(indicator in tag for tag in product_tags):
+                advantages.append(f"Premium quality ({indicator})")
+                break
+        
+        feature_indicators = ['storage', 'chaise', 'sectional', 'convertible', 'sleeper']
+        found_features = [f for f in feature_indicators if f in product_name or f in product_desc]
+        if found_features and not any(f in user_reqs['features'] for f in found_features):
+            advantages.append(f"Extra features: {', '.join(found_features[:2])}")
+            compromise_score += 3
+        
+        # Similarity score impact
+        compromise_score += similarity_score * 50  # Similarity is key factor
+        
+        # Generate natural summary
+        if not disadvantages:
+            if len(advantages) >= 3:
+                summary = f"Perfect match: {advantages[0].lower()}, {advantages[1].lower()}, and {len(advantages)-2} more benefits"
+            elif len(advantages) == 2:
+                summary = f"Great match: {advantages[0].lower()} and {advantages[1].lower()}"
+            elif len(advantages) == 1:
+                summary = f"Good match: {advantages[0].lower()}"
+            else:
+                summary = "Solid option that meets your needs"
+        else:
+            adv_text = advantages[0].lower() if advantages else "matches your search"
+            disadv_text = disadvantages[0].lower()
+            summary = f"Trade-off: {adv_text}, but {disadv_text}"
+        
+        return {
+            'summary': summary,
+            'advantages': advantages if advantages else ['Matches your search criteria'],
+            'disadvantages': disadvantages if disadvantages else [],
+            'compromise_score': round(compromise_score, 2)
+        }
+    
+    # Main function logic
     if not qdrant_client or not clip_model or not clip_processor:
         raise HTTPException(status_code=503, detail="Service not initialized")
     
     try:
-        # Extract budget from query if mentioned
-        import re
-        budget_match = re.search(r'under\s+\$?(\d+)', request.query.lower())
-        max_price = float(budget_match.group(1)) if budget_match else None
+        # Parse user requirements
+        user_reqs = parse_user_requirements(request.query)
+        max_price = user_reqs['budget']
         
-        # Extract materials/fabrics mentioned in query
-        materials = []
-        material_keywords = ['leather', 'velvet', 'fabric', 'wood', 'metal', 'cotton', 'linen', 'polyester', 'suede']
-        query_lower = request.query.lower()
-        for material in material_keywords:
-            if material in query_lower:
-                materials.append(material)
-        
-        # Generate CLIP text embedding
+        # Generate query embedding
         inputs = clip_processor(text=[request.query], return_tensors="pt", padding=True, truncation=True)
-        text_features = clip_model.get_text_features(**inputs)
-        query_embedding = text_features.detach().numpy()[0].tolist()
+        with torch.no_grad():
+            text_features = clip_model.get_text_features(**inputs)
+            query_embedding = text_features.numpy()[0].tolist()
         
-        # Build filters
+        # Thresholds
+        THRESHOLD_MINIMUM = 0.67  # Minimum to show any product (same category)
+        # No "alternative" tier - below 0.67 = different product category (TV vs sofa)
+        
+        # Build category filter
+        
+        # Build category filter
         filters = []
         if request.category and request.category != 'all':
             filters.append(FieldCondition(key="category", match=MatchValue(value=request.category)))
         
-        if max_price:
-            filters.append(FieldCondition(key="price", range={"lte": max_price}))
-        
         search_filter = Filter(must=filters) if filters else None
         
-        # Primary search with text_clip
-        results = qdrant_client.search(
+        # Get candidates
+        all_results = qdrant_client.search(
             collection_name=qdrant_config.COLLECTION_PRODUCTS,
-            query_vector=("image_clip", query_embedding),
-            limit=request.limit or 8,
+            query_vector=("text_clip", query_embedding),
+            limit=50,
             query_filter=search_filter,
             with_payload=True,
-            score_threshold=0.25
+            score_threshold=THRESHOLD_MINIMUM  # Only ≥0.67
         )
         
-        response = {
-            "query": request.query,
-            "strategy": "direct_match",
-            "explanation": f"Found {len(results)} products matching your search",
-            "products": [],
-            "budget_limit": max_price
-        }
+        # Categorize products with compromise analysis
+        perfect_matches = []  # ≥0.67 + within budget + matches color/material
+        alternatives = []  # ≥0.67 + within budget + wrong color/material
+        over_budget_options = []  # ≥0.67 + over budget
         
-        # If no results with budget constraint, try fallback with graph embeddings
-        if len(results) == 0 and max_price:
-            # Remove budget filter and search again
-            search_filter_no_budget = None
-            if request.category and request.category != 'all':
-                search_filter_no_budget = Filter(
-                    must=[FieldCondition(key="category", match=MatchValue(value=request.category))]
-                )
-            
-            # Get a reference product using text search (no budget limit)
-            reference_results = qdrant_client.search(
-                collection_name=qdrant_config.COLLECTION_PRODUCTS,
-                query_vector=("image_clip", query_embedding),
-                limit=1,
-                query_filter=search_filter_no_budget,
-                with_payload=True
-            )
-            
-            if reference_results and len(reference_results) > 0:
-                # Get the reference product's ID
-                ref_product_id = str(reference_results[0].payload.get('product_id'))
-                ref_product_id_int = int(ref_product_id) if ref_product_id.isdigit() else hash(ref_product_id) % (2**31)
-                
-                # Get graph embedding for substitutes
-                product_data = qdrant_client.retrieve(
-                    collection_name=qdrant_config.COLLECTION_PRODUCTS,
-                    ids=[ref_product_id_int],
-                    with_vectors=["graph"]
-                )
-                
-                if product_data and len(product_data) > 0:
-                    graph_vector = product_data[0].vector.get("graph")
-                    
-                    if graph_vector:
-                        # Search for substitutes using graph embeddings + budget filter
-                        substitute_filter = Filter(must=[FieldCondition(key="price", range={"lte": max_price})])
-                        
-                        results = qdrant_client.search(
-                            collection_name=qdrant_config.COLLECTION_PRODUCTS,
-                            query_vector=("graph", graph_vector),
-                            limit=request.limit or 8,
-                            query_filter=substitute_filter,
-                            with_payload=True
-                        )
-                        
-                        response["strategy"] = "graph_substitutes"
-                        
-                        # Create helpful explanation based on what was searched
-                        if materials:
-                            material_str = " or ".join(materials)
-                            response["explanation"] = (
-                                f"Sorry, we don't have {material_str} products at ${max_price}, "
-                                f"but here are similar alternatives with different materials in your budget. "
-                                f"These products have comparable style and aesthetics!"
-                            )
-                        else:
-                            response["explanation"] = (
-                                f"We couldn't find exact matches at ${max_price}, "
-                                f"but here are similar products in your budget with comparable features!"
-                            )
-        elif len(results) == 0:
-            response["explanation"] = "No products found matching your criteria. Try adjusting your search or budget."
-        
-        # Format products
-        for result in results:
+        for result in all_results:
             payload = result.payload
-            response["products"].append({
+            price = payload.get('price', 0)
+            similarity = result.score
+            
+            product_data = {
                 "product_id": payload.get('product_id'),
                 "name": payload.get('name'),
                 "category": payload.get('category'),
-                "price": payload.get('price'),
-                "score": round(result.score, 4),
+                "price": price,
+                "score": round(similarity, 4),
                 "image": payload.get('image'),
                 "description": payload.get('description', '')[:100],
                 "tags": payload.get('tags', []),
                 "colors": payload.get('colors', [])
-            })
+            }
+            
+            # Analyze compromises for this product
+            compromise_analysis = analyze_compromises(product_data, user_reqs, similarity)
+            product_data['compromise'] = compromise_analysis
+            
+            # Check if color/material matches user requirements
+            has_color_mismatch = False
+            has_material_mismatch = False
+            
+            if user_reqs['colors']:
+                product_colors = [c.lower() for c in payload.get('colors', [])]
+                requested_colors = [c.lower() for c in user_reqs['colors']]
+                matching_colors = [c for c in requested_colors if any(c in pc for pc in product_colors)]
+                if not matching_colors:
+                    has_color_mismatch = True
+            
+            if user_reqs['materials']:
+                product_desc = payload.get('description', '').lower()
+                requested_materials = [m.lower() for m in user_reqs['materials']]
+                matching_materials = [m for m in requested_materials if m in product_desc]
+                if not matching_materials:
+                    has_material_mismatch = True
+            
+            # Categorize based on budget, color, and material
+            if max_price is None or price <= max_price:
+                # Within budget
+                if has_color_mismatch or has_material_mismatch:
+                    # Within budget but wrong color/material -> alternatives
+                    alternatives.append(product_data)
+                else:
+                    # Within budget and correct color/material -> perfect match
+                    perfect_matches.append(product_data)
+            else:
+                # Over budget
+                over_budget_options.append(product_data)
+        
+        # Sort by compromise score (best compromises first)
+        perfect_matches.sort(key=lambda x: x['compromise']['compromise_score'], reverse=True)
+        alternatives.sort(key=lambda x: x['compromise']['compromise_score'], reverse=True)
+        over_budget_options.sort(key=lambda x: x['compromise']['compromise_score'], reverse=True)
+        
+        # Limit results
+        perfect_matches = perfect_matches[:10]
+        alternatives = alternatives[:5]
+        over_budget_options = over_budget_options[:5]
+        
+        # Build response with explanations
+        response = {
+            "query": request.query,
+            "user_requirements": user_reqs,
+            "perfect_matches": perfect_matches,
+            "alternatives": alternatives,
+            "over_budget_options": over_budget_options,
+            "strategy": "compromise_analysis",
+            "explanation": ""
+        }
+        
+        # Generate smart explanation
+        total_perfect = len(perfect_matches)
+        total_alternatives = len(alternatives)
+        total_over_budget = len(over_budget_options)
+        
+        if total_perfect >= 5:
+            response["explanation"] = f"Found {total_perfect} great matches within your budget!"
+        elif total_perfect > 0:
+            response["explanation"] = f"Found {total_perfect} good matches"
+            if total_alternatives > 0:
+                response["explanation"] += f" and {total_alternatives} alternatives with different colors/materials"
+            if total_over_budget > 0:
+                response["explanation"] += f" and {total_over_budget} options slightly over budget"
+        elif total_alternatives > 0:
+            response["explanation"] = f"Found {total_alternatives} alternatives (different colors/materials) within budget"
+            if total_over_budget > 0:
+                response["explanation"] += f" and {total_over_budget} options over budget"
+        elif total_over_budget > 0:
+            response["explanation"] = f"Found {total_over_budget} excellent matches just above your budget - small compromise for great results"
+        else:
+            response["explanation"] = "No products found with ≥0.67 similarity (same category). Try adjusting your search."
         
         return response
-    
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
