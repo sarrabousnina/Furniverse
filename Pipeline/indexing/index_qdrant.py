@@ -169,8 +169,110 @@ class MultimodalIndexer:
             for product in tqdm(products, desc="  CLIP embeddings"):
                 pid = str(product['id'])
                 
-                # Text embedding
-                text = f"{product['name']}. {product['description']}"
+                # SMART EMBEDDING STRATEGY based on CSV analysis:
+                # The 'description' field contains the FULL variant-specific name (e.g., "HYLTARP Sofa - Tallmyra blue")
+                # The 'name' field is generic and DUPLICATED across variants (e.g., "HYLTARP Sofa")
+                # 
+                # Weight priorities (TUNED):
+                # 1. Category (15x) - CRITICAL to prevent cross-category matches (sofas vs TV units)
+                #    - Even with "black sofa" query, TV units were showing due to semantic overlap
+                #    - Increased from 5x to 15x to make category the DOMINANT signal
+                # 2. Description (2x) - Has unique variant identifier
+                # 3. Color (3x) - Important differentiator, but not overwhelming (tuned from 5x)
+                # 4. Features (3x) - Material/construction details (Tallmyra, Gransel, etc.)
+                # 5. Styles (2x) - Aesthetic category
+                # 6. Tags (1x) - Supplementary keywords
+                # Skip generic 'name' - it adds noise across variants
+                
+                # Extract and parse fields
+                description = product.get('description', '')
+                category = product.get('category', '')
+                
+                # Parse pipe-delimited features
+                features_raw = product.get('features', '')
+                if features_raw and isinstance(features_raw, str):
+                    features_list = [f.strip() for f in features_raw.split('|') if f.strip()]
+                    features_text = '. '.join(features_list)
+                else:
+                    features_text = ''
+                
+                # Parse comma-delimited colors, styles, tags
+                colors = product.get('colors', [])
+                if isinstance(colors, str):
+                    colors = [c.strip() for c in colors.split(',') if c.strip()]
+                color_text = ', '.join(colors) if colors else ''
+                
+                styles = product.get('styles', [])
+                if isinstance(styles, str):
+                    styles = [s.strip() for s in styles.split(',') if s.strip()]
+                styles_text = ', '.join(styles) if styles else ''
+                
+                tags = product.get('tags', [])
+                if isinstance(tags, str):
+                    tags = [t.strip() for t in tags.split(',') if t.strip()]
+                tags_text = ', '.join(tags) if tags else ''
+                
+                # Build optimized embedding text
+                text_parts = []
+                
+                # 1. Category (15x) - STRONGEST signal to completely prevent cross-category pollution
+                #    Repeat 15 times to dominate the embedding space
+                if category:
+                    text_parts.extend([
+                        f"Category: {category}",
+                        f"Product category: {category}",
+                        f"Type: {category}",
+                        category,
+                        category,
+                        category,
+                        category,
+                        category,
+                        category,
+                        category,
+                        category,
+                        category,
+                        category,
+                        category,
+                        category
+                    ])
+                
+                # 2. Description (2x) - Contains variant-specific name like "HYLTARP Sofa - Tallmyra blue"
+                if description:
+                    text_parts.extend([
+                        description,
+                        description
+                    ])
+                
+                # 3. Color (3x) - Important for distinguishing blue vs gray vs white variants (tuned from 5x)
+                if color_text:
+                    text_parts.extend([
+                        f"Color: {color_text}",
+                        color_text,
+                        color_text
+                    ])
+                
+                # 4. Features (3x) - Material details that differentiate products
+                if features_text:
+                    text_parts.extend([
+                        features_text,
+                        features_text,
+                        features_text
+                    ])
+                
+                # 5. Styles (2x) - Aesthetic categories
+                if styles_text:
+                    text_parts.extend([
+                        f"Style: {styles_text}",
+                        styles_text
+                    ])
+                
+                # 6. Tags (1x) - Additional keywords
+                if tags_text:
+                    text_parts.append(tags_text)
+                
+                # Combine all parts
+                text = '. '.join(text_parts)
+                
                 try:
                     clip_text_embs[pid] = self.embedding_engine.clip.encode_text(text)[0]
                 except Exception as e:
@@ -401,10 +503,9 @@ def main():
     print("\nCreating Qdrant collections...")
     indexer.create_collections()
     
-    # Index products (use a subset for testing if too many)
-    # For hackathon demo, you might want to limit to first 100-200 products
-    products_to_index = products[:200]  # Adjust as needed
-    print(f"\n⚠ Indexing first {len(products_to_index)} products (adjust in code if needed)")
+    # Index all products
+    products_to_index = products  # Index everything
+    print(f"\n📦 Indexing all {len(products_to_index)} products")
     
     indexed_count = indexer.index_products(products_to_index)
     

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { searchWithTradeoffs } from '../../services/api';
+import { smartSearch } from '../../services/api';
 import { useProducts } from '../../context/ProductsContext';
 import ProductCard from '../ProductCard/ProductCard';
-import TradeOffCard from '../TradeOffCard/TradeOffCard';
 import styles from './AISearchBar.module.css';
 
 const AISearchBar = ({ onResultsFound }) => {
@@ -30,31 +29,49 @@ const AISearchBar = ({ onResultsFound }) => {
     setResults(null);
 
     try {
-      // Use trade-off search instead of smart search
-      const response = await searchWithTradeoffs(query);
+      // Use smart search with our fixed backend
+      const response = await smartSearch(query);
 
-      console.log('Trade-off Search Results:', response);
+      console.log('AI Search Results:', response);
 
-      // Helper function to match products
+      // Helper function to match products by ID (most accurate)
       const matchProduct = (p) => {
-        let fullProduct = products.find(prod =>
-          prod.name.toLowerCase().includes(p.name.toLowerCase()) ||
-          p.name.toLowerCase().includes(prod.name.toLowerCase())
-        );
+        // Match by product_id first (most accurate for color variants)
+        let fullProduct = products.find(prod => String(prod.id) === String(p.product_id));
 
+        // Fallback: match by name if ID not found (shouldn't happen)
         if (!fullProduct) {
-          const searchWords = p.name.toLowerCase().split(' ').slice(0, 3).join(' ');
           fullProduct = products.find(prod =>
-            prod.name.toLowerCase().includes(searchWords) ||
-            searchWords.includes(prod.name.toLowerCase())
+            prod.name.toLowerCase().includes(p.name.toLowerCase()) ||
+            p.name.toLowerCase().includes(prod.name.toLowerCase())
           );
         }
+
+        console.log(`Matching ID ${p.product_id} "${p.name}" ->`, fullProduct ? `${fullProduct.id}: ${fullProduct.name}` : 'NOT FOUND');
 
         return fullProduct;
       };
 
-      // Process exact matches
-      const exactMatchesWithDetails = (response.exact_matches || []).map(p => {
+      // Process products from smart search response
+      const perfectMatchesWithDetails = (response.perfect_matches || []).map(p => {
+        const fullProduct = matchProduct(p);
+        return {
+          ...p,
+          fullProduct: fullProduct || null
+        };
+      }).filter(p => p.fullProduct !== null);
+      
+      // Process alternatives (wrong color/material but within budget)
+      const alternativesWithDetails = (response.alternatives || []).map(p => {
+        const fullProduct = matchProduct(p);
+        return {
+          ...p,
+          fullProduct: fullProduct || null
+        };
+      }).filter(p => p.fullProduct !== null);
+      
+      // Process over-budget options (over budget with compromise analysis)
+      const overBudgetWithDetails = (response.over_budget_options || []).map(p => {
         const fullProduct = matchProduct(p);
         return {
           ...p,
@@ -62,26 +79,19 @@ const AISearchBar = ({ onResultsFound }) => {
         };
       }).filter(p => p.fullProduct !== null);
 
-      // Process trade-offs
-      const tradeOffsWithDetails = (response.trade_offs || []).map(p => {
-        const fullProduct = matchProduct(p);
-        return {
-          ...p,
-          fullProduct: fullProduct || null
-        };
-      }).filter(p => p.fullProduct !== null);
-
-      console.log('Exact matches:', exactMatchesWithDetails.length);
-      console.log('Trade-offs:', tradeOffsWithDetails.length);
+      console.log('Perfect matches:', perfectMatchesWithDetails.length);
+      console.log('Alternatives:', alternativesWithDetails.length);
+      console.log('Over-budget options:', overBudgetWithDetails.length);
 
       setResults({
         ...response,
-        exact_matches: exactMatchesWithDetails,
-        trade_offs: tradeOffsWithDetails
+        perfect_matches: perfectMatchesWithDetails,
+        alternatives: alternativesWithDetails,
+        over_budget_options: overBudgetWithDetails
       });
 
       if (onResultsFound) {
-        const allResults = [...exactMatchesWithDetails, ...tradeOffsWithDetails];
+        const allResults = [...perfectMatchesWithDetails, ...alternativesWithDetails, ...overBudgetWithDetails];
         onResultsFound(allResults);
       }
     } catch (err) {
@@ -98,35 +108,40 @@ const AISearchBar = ({ onResultsFound }) => {
     setTimeout(() => {
       searchWithTradeoffs(exampleQuery)
         .then(response => {
-          // Helper function to match products
+          // Helper function to match products by ID (most accurate)
           const matchProduct = (p) => {
-            let fullProduct = products.find(prod =>
-              prod.name.toLowerCase().includes(p.name.toLowerCase()) ||
-              p.name.toLowerCase().includes(prod.name.toLowerCase())
-            );
+            // Match by product_id first (most accurate for color variants)
+            let fullProduct = products.find(prod => String(prod.id) === String(p.product_id));
 
+            // Fallback: match by name if ID not found (shouldn't happen)
             if (!fullProduct) {
-              const searchWords = p.name.toLowerCase().split(' ').slice(0, 3).join(' ');
               fullProduct = products.find(prod =>
-                prod.name.toLowerCase().includes(searchWords) ||
-                searchWords.includes(prod.name.toLowerCase())
+                prod.name.toLowerCase().includes(p.name.toLowerCase()) ||
+                p.name.toLowerCase().includes(prod.name.toLowerCase())
               );
             }
 
             return fullProduct;
           };
 
-          // Process exact matches
-          const exactMatchesWithDetails = (response.exact_matches || []).map(p => {
+          // Process products from smart search response
+          const perfectMatchesWithDetails = (response.perfect_matches || []).map(p => {
             const fullProduct = matchProduct(p);
             return {
               ...p,
               fullProduct: fullProduct || null
             };
           }).filter(p => p.fullProduct !== null);
-
-          // Process trade-offs
-          const tradeOffsWithDetails = (response.trade_offs || []).map(p => {
+          
+          const alternativesWithDetails = (response.alternatives || []).map(p => {
+            const fullProduct = matchProduct(p);
+            return {
+              ...p,
+              fullProduct: fullProduct || null
+            };
+          }).filter(p => p.fullProduct !== null);
+          
+          const overBudgetWithDetails = (response.over_budget_options || []).map(p => {
             const fullProduct = matchProduct(p);
             return {
               ...p,
@@ -136,12 +151,13 @@ const AISearchBar = ({ onResultsFound }) => {
 
           setResults({
             ...response,
-            exact_matches: exactMatchesWithDetails,
-            trade_offs: tradeOffsWithDetails
+            perfect_matches: perfectMatchesWithDetails,
+            alternatives: alternativesWithDetails,
+            over_budget_options: overBudgetWithDetails
           });
 
           if (onResultsFound) {
-            const allResults = [...exactMatchesWithDetails, ...tradeOffsWithDetails];
+            const allResults = [...perfectMatchesWithDetails, ...alternativesWithDetails, ...overBudgetWithDetails];
             onResultsFound(allResults);
           }
         })
@@ -234,7 +250,7 @@ const AISearchBar = ({ onResultsFound }) => {
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
               </svg>
-              Trade-off Analysis
+              AI Analysis
             </h3>
 
             <div className={styles.analysisContent}>
@@ -243,91 +259,151 @@ const AISearchBar = ({ onResultsFound }) => {
                 <span className={styles.analysisValue}>"{results.query}"</span>
               </div>
 
-              {results.user_preferences && (
-                <>
-                  {results.user_preferences.budget && (
-                    <div className={styles.analysisItem}>
-                      <span className={styles.analysisLabel}>💰 Budget:</span>
-                      <span className={styles.analysisValue}>Under ${results.user_preferences.budget}</span>
-                    </div>
-                  )}
-                  {results.user_preferences.material && (
-                    <div className={styles.analysisItem}>
-                      <span className={styles.analysisLabel}>🎨 Material:</span>
-                      <span className={styles.analysisValue}>{results.user_preferences.material}</span>
-                    </div>
-                  )}
-                  {results.user_preferences.style && (
-                    <div className={styles.analysisItem}>
-                      <span className={styles.analysisLabel}>✨ Style:</span>
-                      <span className={styles.analysisValue}>{results.user_preferences.style}</span>
-                    </div>
-                  )}
-                  {results.user_preferences.color && (
-                    <div className={styles.analysisItem}>
-                      <span className={styles.analysisLabel}>🎨 Color:</span>
-                      <span className={styles.analysisValue}>{results.user_preferences.color}</span>
-                    </div>
-                  )}
-                </>
+              {results.user_requirements?.budget && (
+                <div className={styles.analysisItem}>
+                  <span className={styles.analysisLabel}>💰 Budget:</span>
+                  <span className={styles.analysisValue}>Under ${results.user_requirements.budget}</span>
+                </div>
               )}
+
+              <div className={styles.analysisItem}>
+                <span className={styles.analysisLabel}>🎯 Strategy:</span>
+                <span className={styles.analysisValue}>
+                  Compromise Analysis
+                </span>
+              </div>
 
               {results.explanation && (
                 <div className={styles.explanation}>
                   <p>{results.explanation}</p>
                 </div>
               )}
-
-              <div className={styles.summaryStats}>
-                <div className={styles.stat}>
-                  <span className={styles.statValue}>{results.exact_matches?.length || 0}</span>
-                  <span className={styles.statLabel}>Perfect Matches</span>
-                </div>
-                <div className={styles.stat}>
-                  <span className={styles.statValue}>{results.trade_offs?.length || 0}</span>
-                  <span className={styles.statLabel}>Smart Alternatives</span>
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Exact Matches Section */}
-          {results.exact_matches && results.exact_matches.length > 0 && (
-            <div className={styles.resultsSection}>
+          {/* Products Grid */}
+          {results.perfect_matches && results.perfect_matches.length > 0 && (
+            <>
               <h4 className={styles.sectionTitle}>✅ Perfect Matches</h4>
+              <p className={styles.sectionDescription}>
+                Within budget and matches your color/material requirements
+              </p>
               <div className={styles.productsGrid}>
-                {results.exact_matches.map((item) => (
-                  <ProductCard
-                    key={item.product_id}
-                    product={item.fullProduct}
-                    score={item.score}
-                  />
+                {results.perfect_matches.map((item) => (
+                  <div key={item.product_id} className={styles.productCardWrapper}>
+                    <ProductCard
+                      product={item.fullProduct}
+                      score={item.score}
+                    />
+                    {item.compromise && item.compromise.summary && (
+                      <div className={styles.compromiseBadge}>
+                        <span className={styles.compromiseIcon}>✨</span>
+                        <span className={styles.compromiseText}>{item.compromise.summary}</span>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
-            </div>
+            </>
           )}
-
-          {/* Trade-offs Section */}
-          {results.trade_offs && results.trade_offs.length > 0 && (
-            <div className={styles.resultsSection}>
-              <h4 className={styles.sectionTitle}>💡 Smart Alternatives (Trade-offs Analyzed)</h4>
-              <div className={styles.tradeOffsGrid}>
-                {results.trade_offs.map((item) => (
-                  <TradeOffCard
-                    key={item.product_id}
-                    product={{
-                      ...item,
-                      ...item.fullProduct
-                    }}
-                  />
+          
+          {/* Alternatives (different color/material but within budget) */}
+          {results.alternatives && results.alternatives.length > 0 && (
+            <>
+              <h4 className={styles.sectionTitle}>🎨 Alternatives (Different Color/Material)</h4>
+              <p className={styles.sectionDescription}>
+                High similarity but different color or material - still within budget
+              </p>
+              <div className={styles.productsGrid}>
+                {results.alternatives.map((item) => (
+                  <div key={item.product_id} className={styles.tradeoffCard}>
+                    <ProductCard
+                      product={item.fullProduct}
+                      score={item.score}
+                    />
+                    {item.compromise && (
+                      <div className={styles.compromiseAnalysis}>
+                        <div className={styles.compromiseSummary}>
+                          📝 {item.compromise.summary}
+                        </div>
+                        {item.compromise.advantages && item.compromise.advantages.length > 0 && (
+                          <div className={styles.advantagesList}>
+                            <span className={styles.advantagesTitle}>✨ Advantages:</span>
+                            <ul>
+                              {item.compromise.advantages.map((adv, idx) => (
+                                <li key={idx}>{adv}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {item.compromise.disadvantages && item.compromise.disadvantages.length > 0 && (
+                          <div className={styles.disadvantagesList}>
+                            <span className={styles.disadvantagesTitle}>⚠️ Trade-offs:</span>
+                            <ul>
+                              {item.compromise.disadvantages.map((dis, idx) => (
+                                <li key={idx}>{dis}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
-            </div>
+            </>
+          )}
+          
+          {/* Over Budget Options with Compromise Analysis */}
+          {results.over_budget_options && results.over_budget_options.length > 0 && (
+            <>
+              <h4 className={styles.sectionTitle}>💰 Over-Budget Options (Worth Considering)</h4>
+              <p className={styles.sectionDescription}>
+                High-quality matches that cost more - see their advantages and disadvantages
+              </p>
+              <div className={styles.productsGrid}>
+                {results.over_budget_options.map((item) => (
+                  <div key={item.product_id} className={styles.tradeoffCard}>
+                    <ProductCard
+                      product={item.fullProduct}
+                      score={item.score}
+                    />
+                    {item.compromise && (
+                      <div className={styles.compromiseAnalysis}>
+                        <div className={styles.compromiseSummary}>
+                          📝 {item.compromise.summary}
+                        </div>
+                        {item.compromise.advantages && item.compromise.advantages.length > 0 && (
+                          <div className={styles.advantagesList}>
+                            <span className={styles.advantagesTitle}>✨ Advantages:</span>
+                            <ul>
+                              {item.compromise.advantages.map((adv, idx) => (
+                                <li key={idx}>{adv}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {item.compromise.disadvantages && item.compromise.disadvantages.length > 0 && (
+                          <div className={styles.disadvantagesList}>
+                            <span className={styles.disadvantagesTitle}>⚠️ Disadvantages:</span>
+                            <ul>
+                              {item.compromise.disadvantages.map((dis, idx) => (
+                                <li key={idx}>{dis}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
-          {/* No Results */}
-          {((!results.exact_matches || results.exact_matches.length === 0) &&
-            (!results.trade_offs || results.trade_offs.length === 0)) && (
+          {results.perfect_matches && results.perfect_matches.length === 0 && 
+           (!results.alternatives || results.alternatives.length === 0) &&
+           (!results.over_budget_options || results.over_budget_options.length === 0) && (
             <div className={styles.noResults}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />
