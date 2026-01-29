@@ -139,6 +139,41 @@ export const smartSearch = async (query, category = null, limit = 8) => {
   }
 };
 
+/**
+ * Search products by uploaded image using CLIP image embeddings
+ * @param {File} imageFile - Image file to search with
+ * @param {string} category - Optional category filter
+ * @param {number} limit - Number of results (default: 8)
+ * @returns {Promise<Array>} Array of visually similar products
+ */
+export const searchByImage = async (imageFile, category = null, limit = 8) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+    if (category && category !== 'all') {
+      formData.append('category', category);
+    }
+    formData.append('limit', limit.toString());
+
+    const response = await fetch(`${API_BASE_URL}/recommend/image`, {
+      method: 'POST',
+      // Don't set Content-Type header - browser will set it with boundary
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Image search failed: ${response.statusText}`);
+    }
+
+    const results = await response.json();
+    return results;
+  } catch (error) {
+    console.error('Error searching by image:', error);
+    throw error;
+  }
+};
+
 // ============================================================================
 // Product → User Recommendations (User Activity)
 // ============================================================================
