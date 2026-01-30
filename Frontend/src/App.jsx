@@ -9,6 +9,7 @@ import { ToastProvider } from './context/ToastContext';
 import { ProductsProvider } from './context/ProductsContext';
 import { DiscountProvider } from './context/DiscountContext';
 import { CustomProductsProvider } from './context/CustomProductsContext';
+import { ComparisonProvider } from './context/ComparisonContext';
 
 // Pages
 import HomePage from './pages/HomePage/HomePage';
@@ -18,6 +19,7 @@ import ProfilePage from './pages/ProfilePage/ProfilePage';
 import CheckoutPage from './pages/CheckoutPage/CheckoutPage';
 import RoomDetailPage from './pages/RoomDetailPage/RoomDetailPage';
 import AdminPage from './pages/AdminPage/AdminPage';
+import ComparisonPage from './pages/ComparisonPage/ComparisonPage';
 
 // Components
 import Navigation from './components/Navigation/Navigation';
@@ -25,6 +27,7 @@ import CartSidebar from './components/CartSidebar/CartSidebar';
 import AuthModal from './components/AuthModal/AuthModal';
 import ProductDetailModal from './components/ProductDetailModal/ProductDetailModal';
 import ToastContainer from './components/Toast/Toast';
+import ComparisonBar from './components/ComparisonBar/ComparisonBar';
 import './index.css';
 
 // Scroll to top on route change
@@ -58,6 +61,7 @@ function AppContent() {
         <Route path="/room/:roomId" element={<RoomDetailPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/compare" element={<ComparisonPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
@@ -71,6 +75,7 @@ function AppContent() {
           onClose={closeProductModal}
         />
       )}
+      <ComparisonBar />
     </>
   );
 }
@@ -84,14 +89,16 @@ function App() {
             <CustomProductsProvider>
               <AuthProvider>
                 <ProductsProvider>
-                  <CartProvider>
-                    <RoomsProvider>
-                      <ProductModalProvider>
-                        <AppContent />
-                        <ToastContainer />
-                      </ProductModalProvider>
-                    </RoomsProvider>
-                  </CartProvider>
+                  <ComparisonProvider>
+                    <CartProvider>
+                      <RoomsProvider>
+                        <ProductModalProvider>
+                          <AppContent />
+                          <ToastContainer />
+                        </ProductModalProvider>
+                      </RoomsProvider>
+                    </CartProvider>
+                  </ComparisonProvider>
                 </ProductsProvider>
               </AuthProvider>
             </CustomProductsProvider>

@@ -27,6 +27,46 @@
   width: 18px;
   height: 18px;
 }
+
+/* Compare Button */
+.compareButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--color-shadow);
+  transition: all var(--transition-normal);
+  z-index: 2;
+  font-size: 1.2rem;
+}
+
+.compareButton:hover {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(26, 158, 158, 0.3);
+}
+
+.compareActive {
+  background: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+  color: white !important;
+  animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
 .card {
   background: var(--color-surface, #FFFFFF);
   border-radius: var(--radius-lg, 16px);

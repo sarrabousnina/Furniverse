@@ -22,6 +22,7 @@ import numpy as np
 from user_activity import tracker, UserEvent
 import embedding_tradeoff
 from room_analysis import RoomAnalyzer
+from product_comparison import ProductComparator
 
 
 # ============================================================================
@@ -74,6 +75,7 @@ class Product(BaseModel):
 qdrant_client = None
 clip_model = None
 clip_processor = None
+product_comparator = None
 
 app = FastAPI(title="Furniverse AI API")
 
@@ -87,7 +89,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    global repository, qdrant_client, clip_model, clip_processor, room_analyzer
+    global repository, qdrant_client, clip_model, clip_processor, room_analyzer, product_comparator
 
     # Initialize CSV repository FIRST
     csv_path = Path(__file__).parent.parent / "Data" / "processed" / "products.csv"
@@ -100,6 +102,8 @@ async def startup_event():
 
     # Initialize Qdrant and CLIP for AI recommendations
     try:
+        global qdrant_client, clip_model, clip_processor, product_comparator, room_analyzer
+        
         qdrant_client = QdrantClient(
             url=qdrant_config.QDRANT_URL,
             api_key=qdrant_config.QDRANT_API_KEY
@@ -139,13 +143,28 @@ async def startup_event():
         except Exception as e:
             print(f"Price index: {e}")
 
-        # Initialize room analyzer
-        room_analyzer = RoomAnalyzer(clip_model, clip_processor, qdrant_client)
+        # Initialize room analyzer (optional - may fail if model missing)
+        try:
+            room_analyzer = RoomAnalyzer(clip_model, clip_processor, qdrant_client)
+            print("✅ Room analyzer initialized")
+        except Exception as e:
+            print(f"⚠️ Room analyzer not available: {e}")
+            room_analyzer = None
+        
+        # Initialize product comparator (independent of room analyzer)
+        try:
+            product_comparator = ProductComparator(clip_model, clip_processor)
+            print("✅ Product comparator initialized")
+        except Exception as e:
+            print(f"⚠️ Product comparator failed to initialize: {e}")
+            product_comparator = None
         
         print("✅ Connected to Qdrant Cloud and loaded CLIP model")
     except Exception as e:
         print(f"❌ Failed to initialize AI models: {e}")
         print("⚠️ AI recommendations will not be available")
+        import traceback
+        traceback.print_exc()
 
 
 class RecommendRequest(BaseModel):
@@ -1577,3 +1596,56 @@ def analyze_room(request: RoomAnalysisRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Room analysis failed: {str(e)}")
 
+
+# ============================================================================
+# AI Product Comparison (HACKATHON FEATURE!)
+# ============================================================================
+
+class ComparisonRequest(BaseModel):
+    """Request to compare two products"""
+    product_a_id: int
+    product_b_id: int
+
+
+@app.post("/compare/products")
+def compare_products(request: ComparisonRequest):
+    """
+    🎯 HACKATHON FEATURE: AI-Powered Product Comparison
+    
+    Compare two products side-by-side with detailed AI analysis:
+    - Visual similarity score (CLIP embeddings)
+    - Price analysis and value proposition
+    - Feature-by-feature comparison
+    - Style compatibility analysis
+    - AI recommendation on which to choose
+    
+    Perfect for users deciding between similar products!
+    """
+    if not product_comparator:
+        raise HTTPException(status_code=503, detail="Product comparator not initialized")
+    
+    try:
+        # Get both products from repository
+        product_a = repository.get_by_id(request.product_a_id)
+        product_b = repository.get_by_id(request.product_b_id)
+        
+        if not product_a:
+            raise HTTPException(status_code=404, detail=f"Product {request.product_a_id} not found")
+        if not product_b:
+            raise HTTPException(status_code=404, detail=f"Product {request.product_b_id} not found")
+        
+        # Convert to dict for comparison
+        product_a_dict = product_a.dict()
+        product_b_dict = product_b.dict()
+        
+        # Run AI comparison
+        comparison_result = product_comparator.compare_products(product_a_dict, product_b_dict)
+        
+        return comparison_result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")

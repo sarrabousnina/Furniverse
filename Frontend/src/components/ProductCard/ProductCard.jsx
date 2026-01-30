@@ -3,6 +3,7 @@ import { useCart } from '../../context/CartContext';
 import { useProductModal } from '../../context/ProductModalContext';
 import { useToast } from '../../context/ToastContext';
 import { useDiscounts } from '../../context/DiscountContext';
+import { useComparison } from '../../context/ComparisonContext';
 import { trackProductClick } from '../../utils/userTracking';
 import { formatPrice } from '../../utils/currency';
 import styles from './ProductCard.module.css';
@@ -13,6 +14,7 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
   const { openProductModal } = useProductModal();
   const { success } = useToast();
   const { hasDiscount, getDiscount, getDiscountedPrice } = useDiscounts();
+  const { addToComparison, isInComparison, removeFromComparison } = useComparison();
 
   // Validate product data
   if (!product || typeof product !== 'object' || !product.id || !product.name) {
@@ -29,6 +31,17 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
     e.stopPropagation();
     addToCart(product, 1);
     success(`${product.name} successfully added to cart!`);
+  };
+
+  const handleToggleComparison = (e) => {
+    e.stopPropagation();
+    if (isInComparison(product.id)) {
+      removeFromComparison(product.id);
+      success(`${product.name} removed from comparison`);
+    } else {
+      addToComparison(product);
+      success(`${product.name} added to comparison`);
+    }
   };
 
   const renderStars = (rating) => {
@@ -71,6 +84,16 @@ const ProductCard = ({ product, matchScore = null, matchReasons = [], hideFavori
       {/* Image */}
       <div className={styles.imageWrapper}>
         <img src={product.image} alt={product.name} className={styles.image} loading="lazy" />
+
+        {/* Compare Button */}
+        <button
+          className={`${styles.compareButton} ${isInComparison(product.id) ? styles.compareActive : ''}`}
+          onClick={handleToggleComparison}
+          aria-label="Add to comparison"
+          title={isInComparison(product.id) ? "Remove from comparison" : "Add to comparison"}
+        >
+          {isInComparison(product.id) ? '✓' : '⚖️'}
+        </button>
 
         {/* Wishlist Button (hide on Room page) */}
         {!hideFavorite && (
