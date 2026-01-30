@@ -177,7 +177,7 @@
 .discountBadge {
   position: absolute;
   top: var(--spacing-md, 16px);
-  right: var(--spacing-md, 16px);
+  left: var(--spacing-md, 16px);
   background: linear-gradient(135deg, #EF4444, #DC2626);
   color: white;
   padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
@@ -254,8 +254,9 @@
 
 .priceSection {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .priceLabel {
@@ -277,12 +278,14 @@
   font-weight: 500;
   color: var(--color-text-secondary, #6B6B6B);
   text-decoration: line-through;
+  order: 2;
 }
 
 .discountedPrice {
   font-size: 1.25rem;
   font-weight: 700;
   color: #DC2626;
+  order: 1;
 }
 
 .colorIndicator {

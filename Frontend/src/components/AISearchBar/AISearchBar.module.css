@@ -419,6 +419,8 @@
 /* Trade-off Cards */
 .tradeoffCard {
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .productCardWrapper {
@@ -449,54 +451,124 @@
 
 .compromiseAnalysis {
   margin-top: 12px;
-  padding: 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 0.875rem;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
-.compromiseSummary {
-  font-weight: 600;
-  color: var(--color-text-primary);
+.compromiseAnalysis:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
+}
+
+.analysisIcon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.analysisContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.analysisHeader {
   margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-border);
 }
 
-.advantagesList,
+.badgeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.analysisBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #e5e7eb;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.savingsBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #62c99438;
+  color: #065f46;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.analysisTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.advantagesList {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(87, 234, 185, 0.08);
+  border-radius: 8px;
+}
+
 .disadvantagesList {
-  margin-top: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  background: #957a4017;
+  border-radius: 8px;
 }
 
 .advantagesTitle {
   font-weight: 600;
-  color: #10b981;
+  color: #6b7280;
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  font-size: 0.8125rem;
 }
 
 .disadvantagesTitle {
   font-weight: 600;
-  color: #ef4444;
+  color: #6b7280;
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  font-size: 0.8125rem;
 }
 
 .advantagesList ul,
 .disadvantagesList ul {
   margin: 0;
   padding-left: 20px;
+  list-style: disc;
 }
 
-.advantagesList li {
-  color: var(--color-text-secondary);
-  margin: 4px 0;
-}
-
+.advantagesList li,
 .disadvantagesList li {
-  color: var(--color-text-secondary);
-  margin: 4px 0;
+  color: #4b5563;
+  margin: 6px 0;
+  line-height: 1.5;
+  font-size: 0.8125rem;
 }
 
 .tradeoffBadge {

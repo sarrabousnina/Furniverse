@@ -550,37 +550,48 @@ const AISearchBar = ({ onResultsFound }) => {
                     />
                     {item.compromise && (
                       <div className={styles.compromiseAnalysis}>
-                        <div className={styles.compromiseSummary}>
-                          📝 {item.compromise.summary}
+                        <div className={styles.analysisContent}>
+                          <div className={styles.analysisHeader}>
+                            <div className={styles.badgeRow}>
+                              <span className={styles.analysisBadge}>Trade-off</span>
+                              {item.compromise.summary.match(/\d+%/) && (
+                                <span className={styles.savingsBadge}>
+                                  {item.compromise.summary.match(/\d+%/)[0]} savings
+                                </span>
+                              )}
+                            </div>
+                            
+                          </div>
+                          
+                          {item.compromise.advantages &&
+                            item.compromise.advantages.length > 0 && (
+                              <div className={styles.advantagesList}>
+                                <span className={styles.advantagesTitle}>
+                                  Advantages:
+                                </span>
+                                <ul>
+                                  {item.compromise.advantages.map((adv, idx) => (
+                                    <li key={idx}>{adv.replace(/\$(\d+)/g, '$1 TND')}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          {item.compromise.disadvantages &&
+                            item.compromise.disadvantages.length > 0 && (
+                              <div className={styles.disadvantagesList}>
+                                <span className={styles.disadvantagesTitle}>
+                                  Trade-offs:
+                                </span>
+                                <ul>
+                                  {item.compromise.disadvantages.map(
+                                    (dis, idx) => (
+                                      <li key={idx}>{dis.replace(/\$(\d+)/g, '$1 TND')}</li>
+                                    ),
+                                  )}
+                                </ul>
+                              </div>
+                            )}
                         </div>
-                        {item.compromise.advantages &&
-                          item.compromise.advantages.length > 0 && (
-                            <div className={styles.advantagesList}>
-                              <span className={styles.advantagesTitle}>
-                                ✨ Advantages:
-                              </span>
-                              <ul>
-                                {item.compromise.advantages.map((adv, idx) => (
-                                  <li key={idx}>{adv}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        {item.compromise.disadvantages &&
-                          item.compromise.disadvantages.length > 0 && (
-                            <div className={styles.disadvantagesList}>
-                              <span className={styles.disadvantagesTitle}>
-                                ⚠️ Trade-offs:
-                              </span>
-                              <ul>
-                                {item.compromise.disadvantages.map(
-                                  (dis, idx) => (
-                                    <li key={idx}>{dis}</li>
-                                  ),
-                                )}
-                              </ul>
-                            </div>
-                          )}
                       </div>
                     )}
                   </div>
@@ -609,39 +620,54 @@ const AISearchBar = ({ onResultsFound }) => {
                       />
                       {item.compromise && (
                         <div className={styles.compromiseAnalysis}>
-                          <div className={styles.compromiseSummary}>
-                            📝 {item.compromise.summary}
+                          <div className={styles.analysisContent}>
+                            <div className={styles.analysisHeader}>
+                              <div className={styles.badgeRow}>
+                                <span className={styles.analysisBadge}>Premium</span>
+                                {item.compromise.summary.match(/\d+%/) && (
+                                  <span className={styles.savingsBadge}>
+                                    {item.compromise.summary.match(/\d+%/)[0]} over budget
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className={styles.analysisTitle}>
+                                {item.compromise.summary
+                                  .replace(/^[^:]+:\s*/i, '')
+                                  .replace(/\$(\d+)/g, '$1 TND')}
+                              </h4>
+                            </div>
+                            
+                            {item.compromise.advantages &&
+                              item.compromise.advantages.length > 0 && (
+                                <div className={styles.advantagesList}>
+                                  <span className={styles.advantagesTitle}>
+                                    Advantages:
+                                  </span>
+                                  <ul>
+                                    {item.compromise.advantages.map(
+                                      (adv, idx) => (
+                                        <li key={idx}>{adv.replace(/\$(\d+)/g, '$1 TND')}</li>
+                                      ),
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+                            {item.compromise.disadvantages &&
+                              item.compromise.disadvantages.length > 0 && (
+                                <div className={styles.disadvantagesList}>
+                                  <span className={styles.disadvantagesTitle}>
+                                    ⚠️ Disadvantages:
+                                  </span>
+                                  <ul>
+                                    {item.compromise.disadvantages.map(
+                                      (dis, idx) => (
+                                        <li key={idx}>{dis.replace(/\$(\d+)/g, '$1 TND')}</li>
+                                      ),
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
                           </div>
-                          {item.compromise.advantages &&
-                            item.compromise.advantages.length > 0 && (
-                              <div className={styles.advantagesList}>
-                                <span className={styles.advantagesTitle}>
-                                  ✨ Advantages:
-                                </span>
-                                <ul>
-                                  {item.compromise.advantages.map(
-                                    (adv, idx) => (
-                                      <li key={idx}>{adv}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            )}
-                          {item.compromise.disadvantages &&
-                            item.compromise.disadvantages.length > 0 && (
-                              <div className={styles.disadvantagesList}>
-                                <span className={styles.disadvantagesTitle}>
-                                  ⚠️ Disadvantages:
-                                </span>
-                                <ul>
-                                  {item.compromise.disadvantages.map(
-                                    (dis, idx) => (
-                                      <li key={idx}>{dis}</li>
-                                    ),
-                                  )}
-                                </ul>
-                              </div>
-                            )}
                         </div>
                       )}
                     </div>

@@ -19,10 +19,14 @@ const AuthModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Allow any username/password combination
+    const username = formData.email || 'user';
+    const displayName = formData.name || username;
+
     if (isLogin) {
-      login(formData.email, formData.email.split('@')[0]);
+      login(username, displayName);
     } else {
-      signup(formData.email, formData.name);
+      signup(username, displayName);
     }
   };
 
@@ -85,21 +89,19 @@ const AuthModal = () => {
                 onChange={handleChange}
                 className={styles.input}
                 placeholder="Enter your name"
-                required={!isLogin}
               />
             </div>
           )}
 
           <div className={styles.formGroup}>
-            <label className={styles.label}>Email Address</label>
+            <label className={styles.label}>Username</label>
             <input
-              type="email"
+              type="text"
               name="email"
               value={formData.email}
               onChange={handleChange}
               className={styles.input}
-              placeholder="you@example.com"
-              required
+              placeholder="Enter any username"
             />
           </div>
 
@@ -111,8 +113,7 @@ const AuthModal = () => {
               value={formData.password}
               onChange={handleChange}
               className={styles.input}
-              placeholder="••••••••"
-              required
+              placeholder="Enter any password"
             />
           </div>
 
