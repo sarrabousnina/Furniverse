@@ -734,7 +734,7 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
                       <path d="M2 17l10 5 10-5" />
                       <path d="M2 12l10 5 10-5" />
                     </svg>
-                    {generating3D ? '⏳ Generating...' : '🎨 Generate Real 3D'}
+                    {generating3D ? 'Generating...' : 'Generate Real 3D'}
                   </button>
                 )}
 

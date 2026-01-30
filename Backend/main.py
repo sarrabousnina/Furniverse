@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query, File, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from abc import ABC, abstractmethod
@@ -10,6 +11,12 @@ import os
 from PIL import Image
 from io import BytesIO
 from dotenv import load_dotenv
+import asyncio
+import json
+import requests
+import base64
+import uuid
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -83,6 +90,11 @@ clip_processor = None
 product_comparator = None
 
 app = FastAPI(title="Furniverse AI API")
+
+# Mount static files for temporary images
+temp_images_dir = Path("temp_images")
+temp_images_dir.mkdir(exist_ok=True)
+app.mount("/temp_images", StaticFiles(directory="temp_images"), name="temp_images")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1707,6 +1719,186 @@ async def generate_3d_model(
     
     except Exception as e:
         print(f"Error generating 3D model: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"3D generation failed: {str(e)}")
+
+
+# ============================================================================
+# AI Room Visualizer with Kie.ai
+# ============================================================================
+
+# Helper endpoint to convert base64 images to accessible URLs
+@app.post("/upload-temp-image")
+async def upload_temp_image(image_data: dict):
+    """Convert base64 image to publicly accessible URL using free image hosting"""
+    try:
+        base64_str = image_data.get("image", "")
+        
+        # Remove data URL prefix if present
+        if "base64," in base64_str:
+            base64_str = base64_str.split("base64,")[1]
+        
+        print("📤 Uploading image to image hosting service...")
+        
+        # Try ImgBB free API (no auth required)
+        try:
+            upload_response = requests.post(
+                "https://api.imgbb.com/1/upload",
+                data={
+                    "key": "2d4b8580fa3f6da3d6e201641a6f1e98",  # Free ImgBB API key (get your own at api.imgbb.com)
+                    "image": base64_str,
+                    "expiration": 600,  # 10 minutes expiration
+                }
+            )
+            
+            if upload_response.ok:
+                upload_data = upload_response.json()
+                if upload_data.get("success"):
+                    image_url = upload_data["data"]["url"]
+                    print(f"✅ Image uploaded to ImgBB: {image_url}")
+                    return {
+                        "success": True,
+                        "url": image_url,
+                    }
+        except Exception as e:
+            print(f"⚠️ ImgBB upload failed: {e}")
+        
+        # Fallback: use freeimage.host
+        try:
+            files = {"source": ("image.jpg", base64.b64decode(base64_str))}
+            upload_response = requests.post(
+                "https://freeimage.host/api/1/upload",
+                data={"key": "6d207e02198a847aa98d0a2a901485a5"},
+                files=files
+            )
+            
+            if upload_response.ok:
+                upload_data = upload_response.json()
+                if upload_data.get("status_code") == 200:
+                    image_url = upload_data["image"]["url"]
+                    print(f"✅ Image uploaded to FreeImage: {image_url}")
+                    return {
+                        "success": True,
+                        "url": image_url,
+                    }
+        except Exception as e:
+            print(f"⚠️ FreeImage upload failed: {e}")
+        
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to upload image to public hosting. For local testing, please use ngrok or cloudflare tunnel to expose your backend."
+        )
+    
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+class RoomVisualizerRequest(BaseModel):
+    room_image_url: str
+    products: list[dict]
+    aspect_ratio: str = "auto"
+
+@app.post("/room-visualizer")
+async def room_visualizer(request: RoomVisualizerRequest):
+    """Generate room visualization with AI-placed furniture using Kie.ai"""
+    try:
+        KIE_API_KEY = os.getenv("KIE_AI_API_KEY")
+        if not KIE_API_KEY:
+            raise HTTPException(status_code=500, detail="KIE_AI_API_KEY not configured")
+        
+        if not request.products:
+            raise HTTPException(status_code=400, detail="At least one product is required")
+        
+        print(f"🎨 Starting room visualization")
+        print(f"Room image: {request.room_image_url}")
+        print(f"Products: {len(request.products)}")
+        
+        # Build input URLs: room image first, then product images
+        input_urls = [request.room_image_url] + [p["image"] for p in request.products]
+        
+        # Build detailed prompt for furniture placement
+        product_descriptions = ", ".join([
+            f"furniture item {i+1} ({p['name']}) placed {p['placement']}"
+            for i, p in enumerate(request.products)
+        ])
+        
+        prompt = f"""Transform this room photo by realistically adding the furniture shown in the reference images. Place {product_descriptions}. Maintain realistic lighting, shadows, and perspective matching the room. The furniture should look naturally integrated into the space, matching the room's lighting conditions and floor perspective. Keep the room's original architecture, windows, and other elements intact. Professional interior design photography style, photorealistic result."""
+        
+        # Create task
+        create_response = requests.post(
+            "https://api.kie.ai/api/v1/jobs/createTask",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {KIE_API_KEY}"
+            },
+            json={
+                "model": "flux-2/pro-image-to-image",
+                "input": {
+                    "input_urls": input_urls,
+                    "prompt": prompt,
+                    "aspect_ratio": request.aspect_ratio,
+                    "resolution": "2K"
+                }
+            }
+        )
+        
+        if not create_response.ok:
+            print(f"❌ Kie AI HTTP error: {create_response.status_code}")
+            print(f"Response: {create_response.text}")
+            raise HTTPException(status_code=500, detail=f"Kie AI createTask failed: {create_response.status_code}")
+        
+        task_data = create_response.json()
+        print(f"📦 Kie AI response: {json.dumps(task_data, indent=2)}")
+        
+        if task_data.get("code") != 200:
+            # Kie.ai uses 'msg' not 'message'
+            error_msg = task_data.get('msg') or task_data.get('message', 'Unknown error')
+            print(f"❌ Kie AI error code {task_data.get('code')}: {error_msg}")
+            raise HTTPException(status_code=500, detail=f"Kie AI error: {error_msg}")
+        
+        task_id = task_data["data"]["taskId"]
+        print(f"✅ Task created: {task_id}")
+        
+        # Poll for completion (max 30 attempts, 10 seconds each = 5 minutes)
+        for attempt in range(30):
+            await asyncio.sleep(10)
+            
+            status_response = requests.get(
+                f"https://api.kie.ai/api/v1/jobs/recordInfo?taskId={task_id}",
+                headers={"Authorization": f"Bearer {KIE_API_KEY}"}
+            )
+            
+            if not status_response.ok:
+                continue
+            
+            status_data = status_response.json()
+            state = status_data.get("data", {}).get("state")
+            
+            print(f"📊 Task status (attempt {attempt + 1}): {state}")
+            
+            if state == "success":
+                result_json = json.loads(status_data["data"].get("resultJson", "{}"))
+                result_url = result_json.get("resultUrls", [None])[0]
+                
+                if result_url:
+                    print(f"🎉 Task completed! Result URL: {result_url}")
+                    return {
+                        "success": True,
+                        "result_url": result_url,
+                        "task_id": task_id
+                    }
+            
+            if state == "fail":
+                fail_msg = status_data.get("data", {}).get("failMsg", "Unknown error")
+                raise HTTPException(status_code=500, detail=f"Kie AI task failed: {fail_msg}")
+        
+        raise HTTPException(status_code=504, detail="Task timed out after maximum attempts")
+    
+    except Exception as e:
+        print(f"Error in room visualizer: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"3D generation failed: {str(e)}")

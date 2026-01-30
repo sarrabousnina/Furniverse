@@ -8,6 +8,7 @@ import { useProducts } from '../../context/ProductsContext';
 import { formatPrice } from '../../utils/currency';
 import { getUserActivity, getRecentlyViewed, getRecentSearches, getUserId } from '../../utils/userTracking';
 import RoomForm from '../../components/RoomForm/RoomForm';
+import RoomVisualizerModal from '../../components/RoomVisualizerModal/RoomVisualizerModal';
 import styles from './ProfilePage.module.css';
 
 const ProfilePage = () => {
@@ -18,6 +19,7 @@ const ProfilePage = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [userActivity, setUserActivity] = useState(null);
+  const [showVisualizer, setShowVisualizer] = useState(false);
 
   // Load user activity on mount
   useEffect(() => {
@@ -246,7 +248,25 @@ const ProfilePage = () => {
               </svg>
               Create Your First Room
             </button>
+            <button 
+              className={styles.visualizerCTA} 
+              onClick={() => setShowVisualizer(true)}
+              style={{ marginTop: '1rem' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+              AI Room Visualizer
+            </button>
           </motion.div>
+        )}
+
+        {showVisualizer && (
+          <RoomVisualizerModal 
+            isOpen={showVisualizer} 
+            onClose={() => setShowVisualizer(false)} 
+          />
         )}
 
         {/* My Interests Section - Show user their browsing history and preferences */}
