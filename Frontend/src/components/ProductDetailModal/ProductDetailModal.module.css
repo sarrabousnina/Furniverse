@@ -585,6 +585,69 @@
   height: 20px;
 }
 
+.arButton {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  margin-top: var(--spacing-sm, 8px);
+}
+
+.arButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.arButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.generate3DButton {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
+  margin-top: var(--spacing-sm, 8px);
+}
+
+.generate3DButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);
+}
+
+.generate3DButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.generate3DButton svg {
+  width: 20px;
+  height: 20px;
+}
+
 .wishlistButton {
   padding: 10px;
   background: var(--color-bg, #F5F3EF);

@@ -1,5 +1,9 @@
 // API service for backend communication
-const API_BASE_URL = 'http://localhost:8000';
+// Use environment variable or auto-detect IP for mobile access
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (window.location.hostname === 'localhost' 
+    ? 'http://localhost:8000' 
+    : `http://${window.location.hostname}:8000`);
 
 /**
  * Fetch all products from the backend

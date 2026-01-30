@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, File, UploadFile
+from fastapi import FastAPI, HTTPException, Query, File, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -9,6 +9,10 @@ import sys
 import os
 from PIL import Image
 from io import BytesIO
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Add Pipeline directory to path to import qdrant_config
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'Pipeline'))
@@ -23,6 +27,7 @@ from user_activity import tracker, UserEvent
 import embedding_tradeoff
 from room_analysis import RoomAnalyzer
 from product_comparison import ProductComparator
+from tripo_generator import TripoGenerator
 
 
 # ============================================================================
@@ -81,7 +86,7 @@ app = FastAPI(title="Furniverse AI API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:5173"],
+    allow_origins=["*"],  # Allow all origins for development (mobile access)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1649,3 +1654,60 @@ def compare_products(request: ComparisonRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+
+
+# ============================================================================
+# 3D Model Generation with Tripo AI
+# ============================================================================
+
+@app.get("/check-3d-model/{product_id}")
+async def check_3d_model(product_id: int):
+    """Check if a 3D model exists for this product"""
+    try:
+        # Check if model file exists
+        model_path = f"../Frontend/public/models/product-{product_id}.glb"
+        if os.path.exists(model_path):
+            return {
+                "exists": True,
+                "model_url": f"/models/product-{product_id}.glb"
+            }
+        return {"exists": False}
+    except Exception as e:
+        return {"exists": False}
+
+
+@app.post("/generate-3d-model")
+async def generate_3d_model(
+    product_id: int,
+    background_tasks: BackgroundTasks = None
+):
+    """Generate 3D model from product image using Tripo AI"""
+    try:
+        # Get Tripo API key from environment
+        TRIPO_API_KEY = os.getenv("TRIPO_API_KEY")
+        if not TRIPO_API_KEY:
+            raise HTTPException(status_code=500, detail="TRIPO_API_KEY not configured")
+        
+        # Get product
+        product = repository.get_by_id(product_id)
+        if not product:
+            raise HTTPException(status_code=404, detail=f"Product {product_id} not found")
+        
+        # Initialize generator
+        generator = TripoGenerator(TRIPO_API_KEY)
+        
+        # Generate model
+        result = generator.generate_model(
+            image_url=product.image,
+            product_id=str(product_id),
+            product_name=product.name
+        )
+        
+        return result
+    
+    except Exception as e:
+        print(f"Error generating 3D model: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"3D generation failed: {str(e)}")
+

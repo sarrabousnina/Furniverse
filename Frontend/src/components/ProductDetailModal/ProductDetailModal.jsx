@@ -9,6 +9,7 @@ import { trackProductView } from '../../utils/userTracking';
 import { fetchProductById } from '../../services/api';
 import { formatPrice } from '../../utils/currency';
 import ProductCard from '../ProductCard/ProductCard';
+import ARViewer from '../ARViewer/ARViewer';
 import styles from './ProductDetailModal.module.css';
 
 const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
@@ -25,6 +26,9 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [showARViewer, setShowARViewer] = useState(false);
+  const [generating3D, setGenerating3D] = useState(false);
+  const [generated3DModel, setGenerated3DModel] = useState(null);
   
   // Carousel state and refs
   const carouselRef = useRef(null);
@@ -161,6 +165,26 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
             setSelectedVariant(productData.variants[0]);
           }
           trackProductView(productData);
+          
+          // Check if a 3D model already exists for this product
+          const apiUrl = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000' 
+            : `http://${window.location.hostname}:8000`;
+          console.log('🔍 Checking for existing 3D model at:', `${apiUrl}/check-3d-model/${productData.id}`);
+          const response = await fetch(`${apiUrl}/check-3d-model/${productData.id}`);
+          const data = await response.json();
+          console.log('🔍 Check result:', data);
+          if (data.exists) {
+            // Convert relative path to full URL for network access
+            const frontendUrl = window.location.hostname === 'localhost'
+              ? 'http://localhost:3000'
+              : `http://${window.location.hostname}:3000`;
+            const fullModelUrl = `${frontendUrl}${data.model_url}`;
+            console.log('✅ 3D model found! Setting URL to:', fullModelUrl);
+            setGenerated3DModel(fullModelUrl);
+          } else {
+            console.log('❌ No 3D model found for this product');
+          }
         } else {
           console.log('Product not found');
           setError('Product not found');
@@ -244,9 +268,48 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
       rating: currentData.rating,
       reviewCount: currentData.reviewCount,
     };
-    
+
     addToCart(cartItem, quantity);
-    success(`${quantity > 1 ? `${quantity}x ` : ''}${product.name}${cartItem.color ? ` (${cartItem.color})` : ''} successfully added to cart!`);
+    success(`Added ${quantity}x ${product.name} to cart!`);
+  };
+
+  const handleGenerate3D = async () => {
+    try {
+      setGenerating3D(true);
+      success('🎨 Generating 3D model... This may take 1-2 minutes');
+      
+      const apiUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:8000' 
+        : `http://${window.location.hostname}:8000`;
+      
+      const response = await fetch(`${apiUrl}/generate-3d-model?product_id=${product.id}`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate 3D model');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Convert relative path to full URL for network access
+        const frontendUrl = window.location.hostname === 'localhost'
+          ? 'http://localhost:3000'
+          : `http://${window.location.hostname}:3000`;
+        setGenerated3DModel(`${frontendUrl}${result.model_url}`);
+        success(result.cached 
+          ? '✅ 3D model loaded from cache!' 
+          : '✅ 3D model generated successfully!');
+      } else {
+        throw new Error(result.error || 'Generation failed');
+      }
+    } catch (error) {
+      console.error('3D generation error:', error);
+      success(`❌ Failed to generate 3D model: ${error.message}`);
+    } finally {
+      setGenerating3D(false);
+    }
   };
 
   const renderStars = (rating) => {
@@ -641,6 +704,40 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
                   Add to Cart
                 </button>
 
+                {/* AR View Button */}
+                <button
+                  className={styles.arButton}
+                  onClick={() => setShowARViewer(true)}
+                  aria-label="View in AR"
+                  disabled={generating3D}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <path d="M8 21h8" />
+                    <path d="M12 17v4" />
+                    <path d="m7 10 5 3 5-3" />
+                    <path d="m7 13 5-3 5 3" />
+                  </svg>
+                  {generated3DModel ? '✅ View My 3D Model' : 'View in AR'}
+                </button>
+
+                {/* Generate 3D Model Button */}
+                {!generated3DModel && (
+                  <button
+                    className={styles.generate3DButton}
+                    onClick={handleGenerate3D}
+                    disabled={generating3D}
+                    aria-label="Generate 3D Model"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                      <path d="M2 17l10 5 10-5" />
+                      <path d="M2 12l10 5 10-5" />
+                    </svg>
+                    {generating3D ? '⏳ Generating...' : '🎨 Generate Real 3D'}
+                  </button>
+                )}
+
                 {/* Wishlist button is now visually lighter and less prominent */}
                 <button
                   className={`${styles.wishlistButton} ${isWishlisted ? styles.active : ''}`}
@@ -707,6 +804,15 @@ const ProductDetailModal = ({ product: productProp, isOpen, onClose }) => {
           )}
         </div>
       </div>
+
+      {/* AR Viewer Modal */}
+      {showARViewer && product && (
+        <ARViewer 
+          product={product} 
+          onClose={() => setShowARViewer(false)} 
+          customModelUrl={generated3DModel}
+        />
+      )}
     </div>
   );
 };
