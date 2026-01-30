@@ -102,14 +102,6 @@ const RoomCard = ({ room, onEdit, onDelete }) => {
           ))}
         </div>
       )}
-
-      {/* Existing Furniture */}
-      {room.existingFurniture && (
-        <div className={styles.furniture}>
-          <span className={styles.furnitureIcon}>✨</span>
-          {room.existingFurniture}
-        </div>
-      )}
     </div>
   );
 };

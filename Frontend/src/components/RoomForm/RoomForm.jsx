@@ -12,6 +12,15 @@ const STYLE_OPTIONS = [
   'Glam'
 ];
 
+const ROOM_TYPES = [
+  'Living Room',
+  'Bedroom',
+  'Dining Room',
+  'Office',
+  'Kitchen',
+  'Bathroom'
+];
+
 const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -24,10 +33,10 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
       unit: 'cm'
     },
     styles: [],
-    existingFurniture: '',
     image: null
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -111,36 +120,76 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate required fields
     if (!formData.name.trim()) {
-      alert('Please enter a room name');
+      alert('Please select a room type');
       return;
     }
 
-    if (!formData.budgetMin || !formData.budgetMax) {
-      alert('Please enter both minimum and maximum budget');
-      return;
-    }
-
-    if (parseInt(formData.budgetMin) > parseInt(formData.budgetMax)) {
-      alert('Minimum budget cannot be greater than maximum budget');
-      return;
-    }
-
-    onSubmit({
+    // Build room data
+    let roomData = {
       ...formData,
-      budgetMin: parseInt(formData.budgetMin),
-      budgetMax: parseInt(formData.budgetMax),
+      budgetMin: formData.budgetMin ? parseInt(formData.budgetMin) : null,
+      budgetMax: formData.budgetMax ? parseInt(formData.budgetMax) : null,
       dimensions: {
         width: formData.dimensions.width ? parseFloat(formData.dimensions.width) : null,
         length: formData.dimensions.length ? parseFloat(formData.dimensions.length) : null,
         height: formData.dimensions.height ? parseFloat(formData.dimensions.height) : null,
         unit: formData.dimensions.unit
       }
-    });
+    };
+
+    // If image exists, analyze room first before submitting
+    if (imagePreview) {
+      setIsAnalyzing(true);
+      try {
+        const response = await fetch('http://localhost:8000/analyze/room', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: imagePreview,
+            room_type: formData.name,
+            budget_min: formData.budgetMin ? parseInt(formData.budgetMin) : null,
+            budget_max: formData.budgetMax ? parseInt(formData.budgetMax) : null,
+            existing_furniture: ""
+          })
+        });
+
+        if (response.ok) {
+          const analysisResults = await response.json();
+          console.log('Analysis Results:', analysisResults);
+          
+          // Merge analysis results with room data
+          roomData = {
+            ...roomData,
+            analysisResults: analysisResults,
+            detectedFurniture: analysisResults.detected_furniture,
+            detectedStyle: analysisResults.room_style,
+            styleConfidence: analysisResults.style_confidence,
+            roomType: analysisResults.room_type,
+            missingFurniture: analysisResults.missing_furniture,
+            recommendations: analysisResults.recommendations,
+            analysisSummary: analysisResults.analysis_summary
+          };
+        } else {
+          console.error('Analysis response not ok:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('Error details:', errorText);
+        }
+      } catch (error) {
+        console.error('Room analysis failed:', error);
+        // Continue with submission even if analysis fails
+      } finally {
+        setIsAnalyzing(false);
+      }
+    }
+
+    onSubmit(roomData);
   };
 
   return (
@@ -156,20 +205,23 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
         </p>
       </div>
 
-      {/* Room Name */}
+      {/* Room Type */}
       <div className={styles.formGroup}>
         <label className={styles.label}>
-          Room Name
+          Room Type
         </label>
-        <input
-          type="text"
+        <select
           name="name"
           value={formData.name}
           onChange={handleChange}
           className={styles.input}
-          placeholder="e.g., Living Room, Master Bedroom"
           required
-        />
+        >
+          <option value="">Select room type</option>
+          {ROOM_TYPES.map(type => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
       </div>
 
       {/* Room Image */}
@@ -177,7 +229,7 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
         <label className={styles.label}>
           <span className={styles.labelText}>
             Room Image
-            <span className={styles.labelHint}>Optional - Upload a photo of your room</span>
+            <span className={styles.labelHint}>Optional - Upload to get AI recommendations</span>
           </span>
         </label>
         <div className={styles.imageUpload}>
@@ -222,7 +274,8 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
       <div className={styles.formGroup}>
         <label className={styles.label}>
           <span className={styles.labelText}>
-            Budget Range (per item)*
+            Budget Range (per item)
+            <span className={styles.labelHint}>Optional</span>
           </span>
         </label>
         <div className={styles.budgetContainer}>
@@ -351,23 +404,6 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
         </div>
       </div>
 
-      {/* Existing Furniture */}
-      <div className={styles.formGroup}>
-        <label className={styles.label}>
-          <span className={styles.labelText}>
-            Existing Furniture
-            <span className={styles.labelHint}>Optional</span>
-          </span>
-        </label>
-        <textarea
-          name="existingFurniture"
-          value={formData.existingFurniture}
-          onChange={handleChange}
-          className={`${styles.input} ${styles.textarea}`}
-          placeholder="e.g., Navy velvet sofa, walnut coffee table, brass floor lamp"
-        />
-      </div>
-
       {/* Actions */}
       <div className={styles.formActions}>
         <button
@@ -380,8 +416,9 @@ const RoomForm = ({ onSubmit, onCancel, initialData = null }) => {
         <button
           type="submit"
           className={`${styles.button} ${styles.buttonPrimary}`}
+          disabled={isAnalyzing}
         >
-          {initialData ? 'Save Changes' : 'Add Room'}
+          {isAnalyzing ? '🔍 Analyzing & Adding Room...' : (initialData ? 'Save Changes' : 'Add Room')}
         </button>
       </div>
     </form>

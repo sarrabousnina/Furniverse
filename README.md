@@ -66,7 +66,9 @@ npm install
 ```
 
 ### 3. Configure Qdrant Cloud
+
 Edit `Pipeline/qdrant_config.py`:
+
 ```python
 QDRANT_URL = "your-qdrant-cluster-url"
 QDRANT_API_KEY = "your-api-key"
@@ -77,9 +79,11 @@ QDRANT_API_KEY = "your-api-key"
 cd Pipeline
 python run_indexing.py
 ```
+
 This generates CLIP embeddings, color features, and graph embeddings for ~200 products.
 
 ### 5. Start Backend API
+
 ```bash
 cd Backend
 uvicorn main:app --reload
@@ -117,11 +121,10 @@ See full API documentation at `http://localhost:8000/docs`
 
 ## 👥 Team Members
 
-- **[Marwa Mokhtar]** 
-- **[Roua Khalfet]** 
-- **[Sarra Bousnina]** 
+- **[Marwa Mokhtar]**
+- **[Roua Khalfet]**
+- **[Sarra Bousnina]**
 - **[Sameur Mkaouar]**
 - **[Yassine Kharrat]**
 
 ---
-

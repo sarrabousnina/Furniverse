@@ -8,6 +8,7 @@ import { useProducts } from '../../context/ProductsContext';
 import { formatPrice } from '../../utils/currency';
 import { getUserActivity, getRecentlyViewed, getRecentSearches, getUserId } from '../../utils/userTracking';
 import RoomForm from '../../components/RoomForm/RoomForm';
+import RoomVisualizerModal from '../../components/RoomVisualizerModal/RoomVisualizerModal';
 import styles from './ProfilePage.module.css';
 
 const ProfilePage = () => {
@@ -18,6 +19,7 @@ const ProfilePage = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [userActivity, setUserActivity] = useState(null);
+  const [showVisualizer, setShowVisualizer] = useState(false);
 
   // Load user activity on mount
   useEffect(() => {
@@ -246,6 +248,161 @@ const ProfilePage = () => {
               </svg>
               Create Your First Room
             </button>
+            <button 
+              className={styles.visualizerCTA} 
+              onClick={() => setShowVisualizer(true)}
+              style={{ marginTop: '1rem' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+              AI Room Visualizer
+            </button>
+          </motion.div>
+        )}
+
+        {showVisualizer && (
+          <RoomVisualizerModal 
+            isOpen={showVisualizer} 
+            onClose={() => setShowVisualizer(false)} 
+          />
+        )}
+
+        {/* My Interests Section - Show user their browsing history and preferences */}
+        {hasInterests && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            style={{ marginTop: 'var(--spacing-2xl, 48px)' }}
+          >
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 className={styles.sectionTitle}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '28px', height: '28px', verticalAlign: 'middle', marginRight: '12px', color: 'var(--color-accent, #0D4D4D)' }}>
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                  My Interests
+                </h2>
+                <p className={styles.sectionSubtitle}>Based on your browsing history</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-lg, 24px)' }}>
+              {/* Top Categories */}
+              {topCategories.length > 0 && (
+                <div className={styles.interestCard}>
+                  <div className={styles.interestCardHeader}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                      <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <h3>Favorite Categories</h3>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {topCategories.map(({ category, count }) => (
+                      <div key={category} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--color-background, #F5F3F9)', borderRadius: '8px' }}>
+                        <span style={{ fontWeight: '500' }}>{category}</span>
+                        <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary, #666)' }}>{count} views</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recently Viewed */}
+              {recentlyViewed.length > 0 && (
+                <div className={styles.interestCard}>
+                  <div className={styles.interestCardHeader}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <h3>Recently Viewed</h3>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {recentlyViewed.slice(0, 4).map((item) => {
+                      const product = products.find(p => p.id === parseInt(item.productId));
+                      return product ? (
+                        <Link
+                          key={item.productId}
+                          to={`/shop`}
+                          state={{ search: product.name }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '8px',
+                            textDecoration: 'none',
+                            color: 'inherit',
+                            borderRadius: '8px',
+                            transition: 'background 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-background, #F5F3F9)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px' }}
+                          />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: '500', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {item.productName}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary, #666)' }}>
+                              {formatPrice(item.price, 'TND')}
+                            </div>
+                          </div>
+                        </Link>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Searches */}
+              {recentSearches.length > 0 && (
+                <div className={styles.interestCard}>
+                  <div className={styles.interestCardHeader}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '20px', height: '20px' }}>
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <h3>Recent Searches</h3>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {recentSearches.map((search, index) => (
+                      <Link
+                        key={index}
+                        to={`/shop`}
+                        state={{ search }}
+                        style={{
+                          display: 'inline-block',
+                          padding: '6px 12px',
+                          background: 'var(--color-background, #F5F3F9)',
+                          borderRadius: '20px',
+                          fontSize: '0.875rem',
+                          textDecoration: 'none',
+                          color: 'inherit',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--color-accent, #0D4D4D)';
+                          e.currentTarget.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'var(--color-background, #F5F3F9)';
+                          e.currentTarget.style.color = 'inherit';
+                        }}
+                      >
+                        "{search}"
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
 
@@ -545,6 +702,23 @@ const ProfilePage = () => {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button to Add Room */}
+      <motion.button
+        className={styles.fab}
+        onClick={handleAddRoom}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        title="Add new room"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v8M8 12h8" />
+        </svg>
+      </motion.button>
     </div>
   );
 };

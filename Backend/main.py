@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Query, File, UploadFile
+from fastapi import FastAPI, HTTPException, Query, File, UploadFile, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from abc import ABC, abstractmethod
@@ -9,6 +10,16 @@ import sys
 import os
 from PIL import Image
 from io import BytesIO
+from dotenv import load_dotenv
+import asyncio
+import json
+import requests
+import base64
+import uuid
+from datetime import datetime
+
+# Load environment variables
+load_dotenv()
 
 # Add Pipeline directory to path to import qdrant_config
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'Pipeline'))
@@ -21,6 +32,9 @@ import torch
 import numpy as np
 from user_activity import tracker, UserEvent
 import embedding_tradeoff
+from room_analysis import RoomAnalyzer
+from product_comparison import ProductComparator
+from tripo_generator import TripoGenerator
 
 
 # ============================================================================
@@ -73,6 +87,22 @@ class Product(BaseModel):
 qdrant_client = None
 clip_model = None
 clip_processor = None
+product_comparator = None
+
+app = FastAPI(title="Furniverse AI API")
+
+# Mount static files for temporary images
+temp_images_dir = Path("temp_images")
+temp_images_dir.mkdir(exist_ok=True)
+app.mount("/temp_images", StaticFiles(directory="temp_images"), name="temp_images")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for development (mobile access)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app = FastAPI(title="Furniverse AI API")
 
@@ -86,7 +116,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    global repository, qdrant_client, clip_model, clip_processor
+    global repository, qdrant_client, clip_model, clip_processor, room_analyzer, product_comparator
 
     # Initialize CSV repository FIRST
     csv_path = Path(__file__).parent.parent / "Data" / "processed" / "products.csv"
@@ -99,6 +129,8 @@ async def startup_event():
 
     # Initialize Qdrant and CLIP for AI recommendations
     try:
+        global qdrant_client, clip_model, clip_processor, product_comparator, room_analyzer
+        
         qdrant_client = QdrantClient(
             url=qdrant_config.QDRANT_URL,
             api_key=qdrant_config.QDRANT_API_KEY
@@ -138,10 +170,28 @@ async def startup_event():
         except Exception as e:
             print(f"Price index: {e}")
 
+        # Initialize room analyzer (optional - may fail if model missing)
+        try:
+            room_analyzer = RoomAnalyzer(clip_model, clip_processor, qdrant_client)
+            print("✅ Room analyzer initialized")
+        except Exception as e:
+            print(f"⚠️ Room analyzer not available: {e}")
+            room_analyzer = None
+        
+        # Initialize product comparator (independent of room analyzer)
+        try:
+            product_comparator = ProductComparator(clip_model, clip_processor)
+            print("✅ Product comparator initialized")
+        except Exception as e:
+            print(f"⚠️ Product comparator failed to initialize: {e}")
+            product_comparator = None
+        
         print("✅ Connected to Qdrant Cloud and loaded CLIP model")
     except Exception as e:
         print(f"❌ Failed to initialize AI models: {e}")
         print("⚠️ AI recommendations will not be available")
+        import traceback
+        traceback.print_exc()
 
 
 class RecommendRequest(BaseModel):
@@ -460,6 +510,7 @@ repository: Optional[ProductRepository] = None
 qdrant_client = None
 clip_model = None
 clip_processor = None
+room_analyzer = None
 
 
 # ============================================================================
@@ -1536,4 +1587,329 @@ def get_user_stats():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get user stats: {str(e)}")
+
+
+# ============================================================================
+# Room Analysis Endpoint
+# ============================================================================
+
+class RoomAnalysisRequest(BaseModel):
+    """Request model for enhanced room analysis with furniture suggestions"""
+    image: str  # Base64 encoded image
+    room_type: Optional[str] = None  # Optional room type (Living Room, Bedroom, etc.)
+    budget_min: Optional[int] = None  # Optional minimum budget per item
+    budget_max: Optional[int] = None  # Optional maximum budget per item
+    existing_furniture: Optional[str] = None  # Optional description of existing furniture
+
+
+@app.post("/analyze/room")
+def analyze_room(request: RoomAnalysisRequest):
+    """Analyze room image to detect furniture, determine style, and suggest missing items"""
+    if not room_analyzer:
+        raise HTTPException(status_code=503, detail="Room analyzer not initialized")
+    
+    try:
+        result = room_analyzer.analyze_room_with_suggestions(
+            image_data=request.image,
+            room_type=request.room_type,
+            budget_min=request.budget_min,
+            budget_max=request.budget_max,
+            existing_furniture=request.existing_furniture
+        )
+        return result
+    except Exception as e:
+        print(f"Room analysis error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Room analysis failed: {str(e)}")
+
+
+# ============================================================================
+# AI Product Comparison (HACKATHON FEATURE!)
+# ============================================================================
+
+class ComparisonRequest(BaseModel):
+    """Request to compare two products"""
+    product_a_id: int
+    product_b_id: int
+
+
+@app.post("/compare/products")
+def compare_products(request: ComparisonRequest):
+    """
+    🎯 HACKATHON FEATURE: AI-Powered Product Comparison
+    
+    Compare two products side-by-side with detailed AI analysis:
+    - Visual similarity score (CLIP embeddings)
+    - Price analysis and value proposition
+    - Feature-by-feature comparison
+    - Style compatibility analysis
+    - AI recommendation on which to choose
+    
+    Perfect for users deciding between similar products!
+    """
+    if not product_comparator:
+        raise HTTPException(status_code=503, detail="Product comparator not initialized")
+    
+    try:
+        # Get both products from repository
+        product_a = repository.get_by_id(request.product_a_id)
+        product_b = repository.get_by_id(request.product_b_id)
+        
+        if not product_a:
+            raise HTTPException(status_code=404, detail=f"Product {request.product_a_id} not found")
+        if not product_b:
+            raise HTTPException(status_code=404, detail=f"Product {request.product_b_id} not found")
+        
+        # Convert to dict for comparison
+        product_a_dict = product_a.dict()
+        product_b_dict = product_b.dict()
+        
+        # Run AI comparison
+        comparison_result = product_comparator.compare_products(product_a_dict, product_b_dict)
+        
+        return comparison_result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+
+
+# ============================================================================
+# 3D Model Generation with Tripo AI
+# ============================================================================
+
+@app.get("/check-3d-model/{product_id}")
+async def check_3d_model(product_id: int):
+    """Check if a 3D model exists for this product"""
+    try:
+        # Check if model file exists
+        model_path = f"../Frontend/public/models/product-{product_id}.glb"
+        if os.path.exists(model_path):
+            return {
+                "exists": True,
+                "model_url": f"/models/product-{product_id}.glb"
+            }
+        return {"exists": False}
+    except Exception as e:
+        return {"exists": False}
+
+
+@app.post("/generate-3d-model")
+async def generate_3d_model(
+    product_id: int,
+    background_tasks: BackgroundTasks = None
+):
+    """Generate 3D model from product image using Tripo AI"""
+    try:
+        # Get Tripo API key from environment
+        TRIPO_API_KEY = os.getenv("TRIPO_API_KEY")
+        if not TRIPO_API_KEY:
+            raise HTTPException(status_code=500, detail="TRIPO_API_KEY not configured")
+        
+        # Get product
+        product = repository.get_by_id(product_id)
+        if not product:
+            raise HTTPException(status_code=404, detail=f"Product {product_id} not found")
+        
+        # Initialize generator
+        generator = TripoGenerator(TRIPO_API_KEY)
+        
+        # Generate model
+        result = generator.generate_model(
+            image_url=product.image,
+            product_id=str(product_id),
+            product_name=product.name
+        )
+        
+        return result
+    
+    except Exception as e:
+        print(f"Error generating 3D model: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"3D generation failed: {str(e)}")
+
+
+# ============================================================================
+# AI Room Visualizer with Kie.ai
+# ============================================================================
+
+# Helper endpoint to convert base64 images to accessible URLs
+@app.post("/upload-temp-image")
+async def upload_temp_image(image_data: dict):
+    """Convert base64 image to publicly accessible URL using free image hosting"""
+    try:
+        base64_str = image_data.get("image", "")
+        
+        # Remove data URL prefix if present
+        if "base64," in base64_str:
+            base64_str = base64_str.split("base64,")[1]
+        
+        print("📤 Uploading image to image hosting service...")
+        
+        # Try ImgBB free API (no auth required)
+        try:
+            upload_response = requests.post(
+                "https://api.imgbb.com/1/upload",
+                data={
+                    "key": "2d4b8580fa3f6da3d6e201641a6f1e98",  # Free ImgBB API key (get your own at api.imgbb.com)
+                    "image": base64_str,
+                    "expiration": 600,  # 10 minutes expiration
+                }
+            )
+            
+            if upload_response.ok:
+                upload_data = upload_response.json()
+                if upload_data.get("success"):
+                    image_url = upload_data["data"]["url"]
+                    print(f"✅ Image uploaded to ImgBB: {image_url}")
+                    return {
+                        "success": True,
+                        "url": image_url,
+                    }
+        except Exception as e:
+            print(f"⚠️ ImgBB upload failed: {e}")
+        
+        # Fallback: use freeimage.host
+        try:
+            files = {"source": ("image.jpg", base64.b64decode(base64_str))}
+            upload_response = requests.post(
+                "https://freeimage.host/api/1/upload",
+                data={"key": "6d207e02198a847aa98d0a2a901485a5"},
+                files=files
+            )
+            
+            if upload_response.ok:
+                upload_data = upload_response.json()
+                if upload_data.get("status_code") == 200:
+                    image_url = upload_data["image"]["url"]
+                    print(f"✅ Image uploaded to FreeImage: {image_url}")
+                    return {
+                        "success": True,
+                        "url": image_url,
+                    }
+        except Exception as e:
+            print(f"⚠️ FreeImage upload failed: {e}")
+        
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to upload image to public hosting. For local testing, please use ngrok or cloudflare tunnel to expose your backend."
+        )
+    
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+class RoomVisualizerRequest(BaseModel):
+    room_image_url: str
+    products: list[dict]
+    aspect_ratio: str = "auto"
+
+@app.post("/room-visualizer")
+async def room_visualizer(request: RoomVisualizerRequest):
+    """Generate room visualization with AI-placed furniture using Kie.ai"""
+    try:
+        KIE_API_KEY = os.getenv("KIE_AI_API_KEY")
+        if not KIE_API_KEY:
+            raise HTTPException(status_code=500, detail="KIE_AI_API_KEY not configured")
+        
+        if not request.products:
+            raise HTTPException(status_code=400, detail="At least one product is required")
+        
+        print(f"🎨 Starting room visualization")
+        print(f"Room image: {request.room_image_url}")
+        print(f"Products: {len(request.products)}")
+        
+        # Build input URLs: room image first, then product images
+        input_urls = [request.room_image_url] + [p["image"] for p in request.products]
+        
+        # Build detailed prompt for furniture placement
+        product_descriptions = ", ".join([
+            f"furniture item {i+1} ({p['name']}) placed {p['placement']}"
+            for i, p in enumerate(request.products)
+        ])
+        
+        prompt = f"""Transform this room photo by realistically adding the furniture shown in the reference images. Place {product_descriptions}. Maintain realistic lighting, shadows, and perspective matching the room. The furniture should look naturally integrated into the space, matching the room's lighting conditions and floor perspective. Keep the room's original architecture, windows, and other elements intact. Professional interior design photography style, photorealistic result."""
+        
+        # Create task
+        create_response = requests.post(
+            "https://api.kie.ai/api/v1/jobs/createTask",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {KIE_API_KEY}"
+            },
+            json={
+                "model": "flux-2/pro-image-to-image",
+                "input": {
+                    "input_urls": input_urls,
+                    "prompt": prompt,
+                    "aspect_ratio": request.aspect_ratio,
+                    "resolution": "2K"
+                }
+            }
+        )
+        
+        if not create_response.ok:
+            print(f"❌ Kie AI HTTP error: {create_response.status_code}")
+            print(f"Response: {create_response.text}")
+            raise HTTPException(status_code=500, detail=f"Kie AI createTask failed: {create_response.status_code}")
+        
+        task_data = create_response.json()
+        print(f"📦 Kie AI response: {json.dumps(task_data, indent=2)}")
+        
+        if task_data.get("code") != 200:
+            # Kie.ai uses 'msg' not 'message'
+            error_msg = task_data.get('msg') or task_data.get('message', 'Unknown error')
+            print(f"❌ Kie AI error code {task_data.get('code')}: {error_msg}")
+            raise HTTPException(status_code=500, detail=f"Kie AI error: {error_msg}")
+        
+        task_id = task_data["data"]["taskId"]
+        print(f"✅ Task created: {task_id}")
+        
+        # Poll for completion (max 30 attempts, 10 seconds each = 5 minutes)
+        for attempt in range(30):
+            await asyncio.sleep(10)
+            
+            status_response = requests.get(
+                f"https://api.kie.ai/api/v1/jobs/recordInfo?taskId={task_id}",
+                headers={"Authorization": f"Bearer {KIE_API_KEY}"}
+            )
+            
+            if not status_response.ok:
+                continue
+            
+            status_data = status_response.json()
+            state = status_data.get("data", {}).get("state")
+            
+            print(f"📊 Task status (attempt {attempt + 1}): {state}")
+            
+            if state == "success":
+                result_json = json.loads(status_data["data"].get("resultJson", "{}"))
+                result_url = result_json.get("resultUrls", [None])[0]
+                
+                if result_url:
+                    print(f"🎉 Task completed! Result URL: {result_url}")
+                    return {
+                        "success": True,
+                        "result_url": result_url,
+                        "task_id": task_id
+                    }
+            
+            if state == "fail":
+                fail_msg = status_data.get("data", {}).get("failMsg", "Unknown error")
+                raise HTTPException(status_code=500, detail=f"Kie AI task failed: {fail_msg}")
+        
+        raise HTTPException(status_code=504, detail="Task timed out after maximum attempts")
+    
+    except Exception as e:
+        print(f"Error in room visualizer: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"3D generation failed: {str(e)}")
 
