@@ -472,7 +472,7 @@ const AISearchBar = ({ onResultsFound }) => {
 
             <div className={styles.analysisContent}>
               <div className={styles.analysisItem}>
-                <span className={styles.analysisLabel}>Query:</span>
+                <span className={styles.analysisLabel}>Search:</span>
                 <span className={styles.analysisValue}>"{results.query}"</span>
               </div>
 
@@ -484,13 +484,6 @@ const AISearchBar = ({ onResultsFound }) => {
                   </span>
                 </div>
               )}
-
-              <div className={styles.analysisItem}>
-                <span className={styles.analysisLabel}>🎯 Strategy:</span>
-                <span className={styles.analysisValue}>
-                  Compromise Analysis
-                </span>
-              </div>
 
               {results.explanation && (
                 <div className={styles.explanation}>
