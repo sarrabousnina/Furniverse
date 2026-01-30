@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-from abc import ABC, abstractmethod
 import pandas as pd
 from pathlib import Path
 import sys
@@ -30,58 +29,25 @@ import qdrant_config
 from transformers import CLIPModel as HFCLIPModel, CLIPProcessor
 import torch
 import numpy as np
-from user_activity import tracker, UserEvent
-import embedding_tradeoff
-from room_analysis import RoomAnalyzer
-from product_comparison import ProductComparator
-from tripo_generator import TripoGenerator
+
+# Import from organized Backend modules
+from services.user_activity import tracker, UserEvent
+from services import embedding_tradeoff
+from services.room_analysis import RoomAnalyzer
+from services.product_comparison import ProductComparator
+from services.tripo_generator import TripoGenerator
+from services.models import (
+    Dimensions, ColorVariant, Product, 
+    RecommendRequest, ProductRecommendation, TradeOffSearchRequest
+)
+from services.repository import ProductRepository, CSVProductRepository, CATEGORY_MAP
+from utils.tradeoff_helpers import extract_user_preferences, calculate_tradeoffs
 
 
 # ============================================================================
-# Pydantic Models - Match Frontend Product Structure Exactly
+# Models imported from services.models
+# Repository imported from services.repository
 # ============================================================================
-
-class Dimensions(BaseModel):
-    """Product dimensions - flexible structure based on product type"""
-    width: Optional[int] = None
-    height: Optional[int] = None
-    depth: Optional[int] = None
-    seatHeight: Optional[int] = None
-    diameter: Optional[int] = None
-
-
-class ColorVariant(BaseModel):
-    """Color variant with all variant-specific metadata"""
-    id: int
-    color: str
-    price: int
-    rating: float
-    reviewCount: int
-    image: str
-    images: List[str]
-    inStock: bool
-    dimensions: Dimensions
-
-
-class Product(BaseModel):
-    """Frontend-compatible product model with color variants"""
-    id: int
-    name: str
-    category: str
-    price: int
-    rating: float
-    reviewCount: int
-    image: str
-    images: List[str]
-    description: str
-    features: List[str]
-    styles: List[str]
-    colors: List[str]
-    tags: List[str]
-    dimensions: Dimensions
-    inStock: bool
-    trending: bool = False
-    variants: List[ColorVariant] = []
 
 # Initialize Qdrant client and models
 qdrant_client = None
@@ -286,217 +252,6 @@ def calculate_tradeoffs(product: dict, preferences: dict, query_embedding: Optio
             "similarity": 0.0,
             "match_explanation": "Basic match (embedding analysis unavailable)"
         }
-
-
-# ============================================================================
-# Category Mapping - CSV categories to Frontend categories
-# ============================================================================
-
-CATEGORY_MAP = {
-    # Sofas (95 products)
-    "Three-seat sofas": "sofas",
-    "Loveseats": "sofas",
-    "Sectionals": "sofas",
-    "Sofas with chaise lounge": "sofas",
-    "Sectional sleeper sofas": "sofas",
-    
-    # Chairs (8 products)
-    "Dining chairs": "chairs",
-    "Office chairs": "chairs",
-    "Desk chairs for home": "chairs",
-    "Upholstered chairs": "chairs",
-    "Stools": "chairs",
-    
-    # Tables (16 products)
-    "Dining table sets for 4": "tables",
-    "Dining table sets for 6": "tables",
-    "Dining table sets for 10": "tables",
-    "Small dining table sets for 2": "tables",
-    "2 person dining tables": "tables",
-    "Desks for home": "tables",
-    "MITTZON office desks": "tables",
-    
-    # Beds (24 products)
-    "Bed frames": "beds",
-    "Bed frames with storage": "beds",
-    "Upholstered beds": "beds",
-    "Twin beds & single beds": "beds",
-    "Foam mattresses": "beds",
-    "Spring & hybrid mattresses": "beds",
-    
-    # Storage (25 products)
-    "Storage shelves & shelving units": "storage",
-    "Cube storage": "storage",
-    "Cabinets, hutches & cupboards": "storage",
-    "Kids boxes & baskets": "storage",
-    "TROFAST combinations": "storage",
-    "SMÅSTAD combinations": "storage",
-    "Kids dressers & chest of drawers": "storage",
-    "Toy boxes & shelves": "storage",
-    
-    # Bookcases (49 products)
-    "Bookshelves & bookcases": "bookcases",
-    "Display shelves & picture ledges": "bookcases",
-    
-    # TV & Media (67 products)
-    "TV stands & benches": "tv-media",
-    "TV & media storage": "tv-media",
-    "BESTÅ TV benches": "tv-media",
-    "BESTÅ frames": "tv-media",
-    "BESTÅ sideboards": "tv-media",
-    
-    # Lighting (9 products)
-    "Pendant lighting": "lighting",
-    "Table lamps": "lighting",
-    "Desk lamps": "lighting",
-    "Ceiling lamps": "lighting",
-    "LED lamps": "lighting",
-    "Lamp shades": "lighting",
-    "LED strip lights": "lighting",
-    
-    # Textiles (73 products)
-    "Throw pillow covers": "textiles",
-    "Pillow inserts": "textiles",
-    "Accent & throw pillows": "textiles",
-    
-    # Decoration / Electronics (37 products)
-    "Cable management & cord organizers": "decoration",
-    "Rechargeable batteries & battery chargers": "decoration",
-    "Bluetooth speakers": "decoration",
-    "Wireless chargers & accessories": "decoration",
-    "USB chargers, portable chargers & more": "decoration",
-    "Wooden toys": "decoration",
-}
-
-
-# ============================================================================
-# Repository Pattern - Easy to swap CSV for Qdrant later
-# ============================================================================
-
-class ProductRepository(ABC):
-    """Abstract base class for product data sources"""
-    
-    @abstractmethod
-    def get_all(self) -> List[Product]:
-        """Get all products"""
-        pass
-    
-    @abstractmethod
-    def get_by_id(self, product_id: int) -> Optional[Product]:
-        """Get product by ID"""
-        pass
-    
-    @abstractmethod
-    def get_by_category(self, category: str) -> List[Product]:
-        """Get products by category"""
-        pass
-    
-    @abstractmethod
-    def search(self, query: str) -> List[Product]:
-        """Search products (placeholder for future vector search)"""
-        pass
-
-
-class CSVProductRepository(ProductRepository):
-    """CSV-based product repository - temporary until Qdrant is ready"""
-    
-    def __init__(self, csv_path: str):
-        self.csv_path = Path(csv_path)
-        self.products: List[Product] = []
-        self._load_data()
-    
-    def _load_data(self):
-        """Load and transform CSV data into Product models"""
-        if not self.csv_path.exists():
-            raise FileNotFoundError(f"CSV file not found: {self.csv_path}")
-        
-        try:
-            df = pd.read_csv(self.csv_path)
-            self.products = [self._transform_row(row) for _, row in df.iterrows()]
-            print(f"[OK] Loaded {len(self.products)} products from CSV")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load CSV: {e}")
-    
-    def _transform_row(self, row: pd.Series) -> Product:
-        """Transform CSV row to frontend Product structure"""
-        
-        # Build dimensions object, excluding zero/null values
-        dimensions_dict = {}
-        if pd.notna(row.get('width')) and row.get('width', 0) > 0:
-            dimensions_dict['width'] = int(row['width'])
-        if pd.notna(row.get('height')) and row.get('height', 0) > 0:
-            dimensions_dict['height'] = int(row['height'])
-        if pd.notna(row.get('depth')) and row.get('depth', 0) > 0:
-            dimensions_dict['depth'] = int(row['depth'])
-        
-        # Split pipe-delimited strings into arrays
-        images = row['images'].split('|') if pd.notna(row.get('images')) and row['images'] else [row['image']]
-        features = row['features'].split('|') if pd.notna(row.get('features')) and row['features'] else []
-        # Styles are comma-separated in CSV, split and clean them
-        styles_raw = row.get('styles', '')
-        styles = [s.strip() for s in str(styles_raw).split(',') if s.strip()] if pd.notna(styles_raw) and styles_raw else []
-        tags = row['tags'].split('|') if pd.notna(row.get('tags')) and row['tags'] else []
-        
-        # Colors: split comma-separated values
-        colors_raw = row.get('colors', '')
-        colors = [c.strip() for c in str(colors_raw).split(',') if c.strip()] if pd.notna(colors_raw) and colors_raw else []
-        
-        # Map category to frontend category (strip whitespace for clean matching)
-        raw_category = str(row['category']).strip()
-        category = CATEGORY_MAP.get(raw_category, raw_category)
-        
-        # Convert string booleans to actual booleans
-        # Note: inStock column no longer exists in new CSV, default to True
-        in_stock = True
-        trending = str(row.get('trending', 'False')).lower() == 'true'
-        
-        return Product(
-            id=int(row['id']),
-            name=row['name'],
-            category=category,
-            price=int(row['price']),
-            rating=float(row['rating']),
-            reviewCount=int(row['reviewCount']),
-            image=row['image'],
-            images=images,
-            description=row['description'],
-            features=features,
-            styles=styles,
-            colors=colors,
-            tags=tags,
-            dimensions=Dimensions(**dimensions_dict),
-            inStock=in_stock,
-            trending=trending
-        )
-    
-    def get_all(self) -> List[Product]:
-        """Get all products (each variant listed separately)"""
-        return self.products
-    
-    def get_by_id(self, product_id: int) -> Optional[Product]:
-        """Get product by ID (returns individual product)"""
-        for product in self.products:
-            if product.id == product_id:
-                return product
-        return None
-    
-    def get_by_category(self, category: str) -> List[Product]:
-        """Get products by category (case-insensitive, each variant listed separately)"""
-        category_lower = category.lower()
-        return [p for p in self.products if p.category.lower() == category_lower]
-    
-    def search(self, query: str) -> List[Product]:
-        """Simple text search - placeholder for future vector search (each variant listed separately)"""
-        query_lower = query.lower()
-        results = []
-        
-        for product in self.products:
-            # Search in name, description, tags, styles
-            searchable = f"{product.name} {product.description} {' '.join(product.tags)} {' '.join(product.styles)}".lower()
-            if query_lower in searchable:
-                results.append(product)
-        
-        return results
 
 
 # ============================================================================

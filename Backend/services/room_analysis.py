@@ -9,7 +9,7 @@ from collections import Counter
 from typing import Dict, List, Optional, Tuple
 
 # Add Pipeline to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'Pipeline'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'Pipeline'))
 
 from cv.detector import FurnitureDetector
 from qdrant_client import QdrantClient
