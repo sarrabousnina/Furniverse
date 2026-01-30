@@ -11,6 +11,7 @@
 ### 2. Configurez la clé API
 
 Éditez `Backend/.env`:
+
 ```
 TRIPO_API_KEY=votre_clé_api_ici
 ```
@@ -50,14 +51,16 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ✅ **Cache intelligent**: Une fois généré, le modèle est réutilisé  
 ✅ **Stockage local**: Les modèles sont sauvegardés localement  
 ✅ **Progression**: Notifications de progression en temps réel  
-✅ **AR Ready**: Modèles optimisés pour AR mobile  
+✅ **AR Ready**: Modèles optimisés pour AR mobile
 
 ## Pour la démo hackathon
 
 **Dites au jury:**
+
 > "Notre app utilise l'IA générative pour créer des modèles 3D à partir de simples photos 2D. En 1 minute, on transforme une image produit en modèle 3D complet que vous pouvez visualiser en réalité augmentée dans votre propre espace. C'est du vrai machine learning appliqué au e-commerce!"
 
 **Points impressionnants:**
+
 - ✨ IA générative (Tripo AI)
 - 📸 Image 2D → Modèle 3D
 - 📱 AR immédiat sur mobile
@@ -87,6 +90,7 @@ Pour le hackathon, choisissez 2-3 produits à générer pour la démo!
 ## Cache
 
 Les modèles générés sont stockés dans:
+
 - `Frontend/public/models/product-{id}.glb` - Fichier 3D
 - `Backend/3d_model_cache.json` - Cache des URLs
 

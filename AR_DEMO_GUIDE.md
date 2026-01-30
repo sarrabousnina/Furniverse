@@ -30,6 +30,7 @@
 ## 🎬 How to Demo (Jury Magnet!)
 
 ### Desktop Demo (3D Preview):
+
 1. Click any product card to open details
 2. Click **"View in AR"** button (purple gradient)
 3. Show **360° rotation** (drag the model)
@@ -37,6 +38,7 @@
 5. Highlight **"View in AR"** button in the overlay
 
 ### Mobile Demo (ACTUAL AR!):
+
 1. Open on phone (iPhone or Android)
 2. Navigate to any product
 3. Click **"View in AR"**
@@ -48,16 +50,16 @@
 
 ## 🎯 Demo Script (30 seconds)
 
-> "Watch this - I'll show you our AR feature. [Open product] 
-> 
-> Click 'View in AR'... Here's the 3D model. On desktop you can rotate it 360°, 
+> "Watch this - I'll show you our AR feature. [Open product]
+>
+> Click 'View in AR'... Here's the 3D model. On desktop you can rotate it 360°,
 > but the magic happens on mobile. [Pull out phone]
-> 
-> Same product, same button, but now... [tap AR button] 
-> 
-> My camera opens and - boom! The furniture is in my ACTUAL ROOM. 
-> I can walk around it, see if it fits, even take photos. 
-> 
+>
+> Same product, same button, but now... [tap AR button]
+>
+> My camera opens and - boom! The furniture is in my ACTUAL ROOM.
+> I can walk around it, see if it fits, even take photos.
+>
 > This is real-time AR using WebXR - no app download needed!"
 
 ## 🛠️ Technical Highlights for Jury
@@ -101,14 +103,17 @@
 ## 🚀 Quick Fixes if Needed
 
 **Model not loading?**
+
 - Check console for CORS errors
 - Models are from Google's CDN (should work)
 
 **AR button not appearing?**
+
 - Only shows on mobile with AR support
 - Desktop shows 3D preview only
 
 **Want real furniture models?**
+
 - Download free GLB files from Sketchfab
 - Update `getModelUrl()` function in ARViewer.jsx
 - Map product IDs to model URLs
@@ -118,6 +123,7 @@
 ## 🎉 You're Ready!
 
 You now have **3 killer features**:
+
 1. ✅ AI Product Comparison (with voice)
 2. ✅ Virtual Room Planner (drag & drop)
 3. ✅ AR Product Preview (camera AR!)
