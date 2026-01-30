@@ -8,8 +8,8 @@ class FurnitureDetector:
     """
 
     def __init__(self):
-        # 🔒 Absolute path outside OneDrive
-        self.model_path = "C:/FurniverseModels/best.pt"  # Move your model here!
+        
+        self.model_path = "models/best.pt" 
 
         print(f"[INFO] Loading YOLO model from: {self.model_path}")
 
