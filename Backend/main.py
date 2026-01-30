@@ -21,6 +21,7 @@ import torch
 import numpy as np
 from user_activity import tracker, UserEvent
 import embedding_tradeoff
+from room_analysis import RoomAnalyzer
 
 
 # ============================================================================
@@ -86,7 +87,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    global repository, qdrant_client, clip_model, clip_processor
+    global repository, qdrant_client, clip_model, clip_processor, room_analyzer
 
     # Initialize CSV repository FIRST
     csv_path = Path(__file__).parent.parent / "Data" / "processed" / "products.csv"
@@ -138,6 +139,9 @@ async def startup_event():
         except Exception as e:
             print(f"Price index: {e}")
 
+        # Initialize room analyzer
+        room_analyzer = RoomAnalyzer(clip_model, clip_processor, qdrant_client)
+        
         print("✅ Connected to Qdrant Cloud and loaded CLIP model")
     except Exception as e:
         print(f"❌ Failed to initialize AI models: {e}")
@@ -460,6 +464,7 @@ repository: Optional[ProductRepository] = None
 qdrant_client = None
 clip_model = None
 clip_processor = None
+room_analyzer = None
 
 
 # ============================================================================
@@ -1536,4 +1541,39 @@ def get_user_stats():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get user stats: {str(e)}")
+
+
+# ============================================================================
+# Room Analysis Endpoint
+# ============================================================================
+
+class RoomAnalysisRequest(BaseModel):
+    """Request model for enhanced room analysis with furniture suggestions"""
+    image: str  # Base64 encoded image
+    room_type: Optional[str] = None  # Optional room type (Living Room, Bedroom, etc.)
+    budget_min: Optional[int] = None  # Optional minimum budget per item
+    budget_max: Optional[int] = None  # Optional maximum budget per item
+    existing_furniture: Optional[str] = None  # Optional description of existing furniture
+
+
+@app.post("/analyze/room")
+def analyze_room(request: RoomAnalysisRequest):
+    """Analyze room image to detect furniture, determine style, and suggest missing items"""
+    if not room_analyzer:
+        raise HTTPException(status_code=503, detail="Room analyzer not initialized")
+    
+    try:
+        result = room_analyzer.analyze_room_with_suggestions(
+            image_data=request.image,
+            room_type=request.room_type,
+            budget_min=request.budget_min,
+            budget_max=request.budget_max,
+            existing_furniture=request.existing_furniture
+        )
+        return result
+    except Exception as e:
+        print(f"Room analysis error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Room analysis failed: {str(e)}")
 

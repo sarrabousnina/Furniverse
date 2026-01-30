@@ -545,6 +545,23 @@ const ProfilePage = () => {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button to Add Room */}
+      <motion.button
+        className={styles.fab}
+        onClick={handleAddRoom}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        title="Add new room"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v8M8 12h8" />
+        </svg>
+      </motion.button>
     </div>
   );
 };

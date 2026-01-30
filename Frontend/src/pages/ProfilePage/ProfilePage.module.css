@@ -887,3 +887,51 @@
   color: var(--color-text-primary, #1A1A1A);
 }
 
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #286160 0%, #1a4a49 100%);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(40, 97, 96, 0.4);
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.fab:hover {
+  box-shadow: 0 12px 48px rgba(40, 97, 96, 0.6);
+  transform: translateY(-2px);
+}
+
+.fab:active {
+  transform: translateY(0);
+}
+
+.fab svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2;
+}
+
+@media (max-width: 768px) {
+  .fab {
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .fab svg {
+    width: 24px;
+    height: 24px;
+  }
+}

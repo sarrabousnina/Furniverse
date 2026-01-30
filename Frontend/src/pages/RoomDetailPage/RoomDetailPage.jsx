@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -8,6 +8,7 @@ import 'swiper/css/pagination';
 import { useRooms } from '../../context/RoomsContext';
 import { useProducts } from '../../context/ProductsContext';
 import { formatPrice } from '../../utils/currency';
+import { smartSearch } from '../../services/api';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import styles from './RoomDetailPage.module.css';
 
@@ -17,8 +18,116 @@ const RoomDetailPage = () => {
   const { getRoomById, removeProductFromRoom } = useRooms();
   const { products, loading, error } = useProducts();
   const [activeCategory, setActiveCategory] = useState('all');
+  const [recommendations, setRecommendations] = useState({});
+  const [loadingRecs, setLoadingRecs] = useState(false);
 
   const room = getRoomById(roomId);
+
+  // Fetch vector search recommendations for missing items using room profile
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!room || !room.missingFurniture) return;
+      
+      const missingItems = [
+        ...(room.missingFurniture.missing_required || []),
+        ...(room.missingFurniture.missing_recommended || [])
+      ];
+      
+      if (missingItems.length === 0) return;
+      
+      setLoadingRecs(true);
+      const recs = {};
+      
+      // Build room profile for context
+      const roomStyle = room.detectedStyle || (room.styles && room.styles[0]) || 'modern';
+      const roomType = room.name || 'living room';
+      
+      // Get styles from existing furniture in the room
+      const existingFurniture = room.products || [];
+      const existingStyles = [...new Set(existingFurniture.flatMap(p => p.styles || []))];
+      const existingColors = [...new Set(existingFurniture.flatMap(p => p.colors || []))];
+      
+      // Build budget constraint string
+      const hasBudget = room.budgetMin || room.budgetMax;
+      const budgetStr = hasBudget 
+        ? `under ${room.budgetMax || room.budgetMin * 2}` 
+        : '';
+      
+      for (const item of missingItems) {
+        try {
+          // Build a comprehensive query using room profile
+          // Combines: room style + existing furniture styles + item + budget
+          const styleContext = existingStyles.length > 0 
+            ? existingStyles.slice(0, 2).join(' ') 
+            : roomStyle;
+          
+          const colorContext = existingColors.length > 0 
+            ? existingColors[0] 
+            : '';
+          
+          // Smart query: "modern scandinavian coffee table for living room under 500"
+          const queryParts = [
+            styleContext,
+            colorContext,
+            item,
+            `for ${roomType}`,
+            budgetStr
+          ].filter(Boolean);
+          
+          const query = queryParts.join(' ');
+          console.log(`Vector search for "${item}":`, query);
+          
+          // Use the same vector search as the shop
+          const result = await smartSearch(query, null, 8);
+          
+          // Get all products from the result
+          const allProducts = [
+            ...(result.perfect_matches || []),
+            ...(result.alternatives || []),
+            ...(result.over_budget_options || [])
+          ];
+          
+          // Filter by budget if set
+          let filteredProducts = allProducts;
+          if (room.budgetMax) {
+            // Prioritize within-budget, but include some over-budget options
+            const withinBudget = allProducts.filter(p => p.price <= room.budgetMax);
+            const overBudget = allProducts.filter(p => p.price > room.budgetMax);
+            filteredProducts = [...withinBudget, ...overBudget.slice(0, 2)];
+          }
+          
+          // Match with full product data
+          const matchedProducts = filteredProducts.map(p => {
+            const fullProduct = products.find(prod => String(prod.id) === String(p.product_id));
+            if (fullProduct) {
+              return { 
+                ...fullProduct, 
+                score: p.score,
+                compromise: p.compromise,
+                withinBudget: room.budgetMax ? fullProduct.price <= room.budgetMax : true
+              };
+            }
+            return null;
+          }).filter(p => p !== null).slice(0, 6);
+          
+          if (matchedProducts.length > 0) {
+            recs[item] = {
+              products: matchedProducts,
+              query: query,
+              budgetMax: room.budgetMax
+            };
+          }
+        } catch (err) {
+          console.error(`Failed to fetch recommendations for ${item}:`, err);
+        }
+      }
+      
+      setRecommendations(recs);
+      setLoadingRecs(false);
+    };
+    
+    fetchRecommendations();
+  }, [room, products]);
 
   if (loading) {
     return (
@@ -67,7 +176,15 @@ const RoomDetailPage = () => {
   // Get room products - now stored as full objects with variant data
   const roomProducts = room.products || [];
 
-  const productCategories = [...new Set(roomProducts.map(p => p.category))];
+  // If no products, use analysis data for stats
+  const displayItems = roomProducts.length > 0 
+    ? roomProducts 
+    : (room.detectedFurniture || []);
+
+  // Calculate categories from products or detected furniture
+  const productCategories = roomProducts.length > 0
+    ? [...new Set(roomProducts.map(p => p.category))]
+    : [...new Set((room.detectedFurniture || []).map(p => p.matched_category || p.class).filter(Boolean))];
 
   const filteredProducts = activeCategory === 'all' 
     ? roomProducts 
@@ -131,6 +248,11 @@ const RoomDetailPage = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
+        style={{
+          backgroundImage: room.image ? `url(${room.image})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
       >
         <div className={styles.heroOverlay} />
         <div className={styles.heroContent}>
@@ -158,15 +280,16 @@ const RoomDetailPage = () => {
             </div>
             <h1 className={styles.roomTitle}>{room.name}</h1>
             <div className={styles.roomBadges}>
-              {room.style && <span className={styles.badge}>{room.style}</span>}
+              {(room.detectedStyle || room.style) && <span className={styles.badge}>{room.detectedStyle || room.style}</span>}
+              {room.styleConfidence && <span className={styles.badge}>Style confidence: {Math.round(room.styleConfidence * 100)}%</span>}
               {formatDimensions() && (
                 <span className={styles.badge}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                </svg>
-                {formatDimensions()}
+                  </svg>
+                  {formatDimensions()}
                 </span>
-            )}
+              )}
             </div>
         </motion.div>
         </div>
@@ -187,7 +310,7 @@ const RoomDetailPage = () => {
             </svg>
             </div>
             <div className={styles.statContent}>
-              <span className={styles.statValue}>{roomProducts.length}</span>
+              <span className={styles.statValue}>{displayItems.length}</span>
               <span className={styles.statLabel}>Items</span>
             </div>
           </div>
@@ -204,23 +327,113 @@ const RoomDetailPage = () => {
               <span className={styles.statLabel}>Categories</span>
             </div>
           </div>
-          <div className={styles.statDivider} />
-          <div className={styles.statItem}>
-            <div className={styles.statIcon}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <div className={styles.statContent}>
-              <span className={styles.statValue}>{formatPrice(totalValue, 'TND', 0)}</span>
-              <span className={styles.statLabel}>Total Value</span>
-            </div>
-          </div>
         </div>
       </motion.section>
 
       {/* Main Content */}
       <main className={styles.mainContent}>
+        {/* Analysis Results Section */}
+        {(room.analysisResults || room.detectedStyle || room.detectedFurniture) && (
+          <motion.section
+            className={styles.analysisSection}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <h2 className={styles.sectionTitle}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <circle cx="12" cy="17" r="0.5" fill="currentColor" />
+              </svg>
+              AI Room Analysis
+            </h2>
+
+            {/* Analysis Summary */}
+            {room.analysisSummary && (
+              <div className={styles.analysisCard} style={{ borderLeft: '4px solid #286160', backgroundColor: '#f0f8f7' }}>
+                <p style={{ margin: 0, color: '#0D4D4D', fontSize: '0.95rem' }}>{room.analysisSummary}</p>
+              </div>
+            )}
+
+            {/* Detected Style */}
+            {room.detectedStyle && (
+              <div className={styles.analysisCard}>
+                <h3>Detected Style</h3>
+                <p className={styles.styleValue}>{room.detectedStyle}</p>
+                {room.styleConfidence && <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '8px' }}>Confidence: {Math.round(room.styleConfidence * 100)}%</p>}
+              </div>
+            )}
+
+            {/* Missing Furniture */}
+            {room.missingFurniture && (Object.keys(room.missingFurniture).length > 0 || room.missingFurniture.missing_required || room.missingFurniture.missing_recommended) && (
+              <div className={styles.analysisCard}>
+                <h3>Missing Furniture</h3>
+                {room.missingFurniture.missing_required && room.missingFurniture.missing_required.length > 0 && (
+                  <div className={styles.missingGroup}>
+                    <h4 className={styles.missingTitle}>Required Items:</h4>
+                    <ul className={styles.missingList}>
+                      {room.missingFurniture.missing_required.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {room.missingFurniture.missing_recommended && room.missingFurniture.missing_recommended.length > 0 && (
+                  <div className={styles.missingGroup}>
+                    <h4 className={styles.missingTitle}>Recommended Items:</h4>
+                    <ul className={styles.missingList}>
+                      {room.missingFurniture.missing_recommended.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Recommendations - Vector Search Results */}
+            {Object.keys(recommendations).length > 0 && (
+              <div className={styles.analysisCard}>
+                <h3>🔍 AI Smart Recommendations</h3>
+                <p className={styles.recDescription}>
+                  Based on your room profile: {room.detectedStyle || room.styles?.[0] || 'modern'} style
+                  {room.budgetMax && ` • Budget: up to ${formatPrice(room.budgetMax, 'TND', 0)}`}
+                  {(room.products?.length > 0) && ` • Matching ${room.products.length} existing items`}
+                </p>
+                {Object.entries(recommendations).map(([itemType, data]) => (
+                  <div key={itemType} className={styles.recommendationCategory}>
+                    <h4 className={styles.recCategoryTitle}>
+                      {itemType}
+                      <span className={styles.recQuery}>Search: "{data.query}"</span>
+                    </h4>
+                    <div className={styles.recProductsGrid}>
+                      {data.products.map((product) => (
+                        <div 
+                          key={product.id} 
+                          className={`${styles.recProductCard} ${!product.withinBudget ? styles.overBudget : ''}`}
+                        >
+                          {!product.withinBudget && (
+                            <span className={styles.overBudgetBadge}>Over Budget</span>
+                          )}
+                          <ProductCard product={product} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {loadingRecs && (
+              <div className={styles.analysisCard}>
+                <h3>🔍 Finding Smart Recommendations...</h3>
+                <p>Analyzing room profile, existing furniture styles, and budget to find perfect matches...</p>
+              </div>
+            )}
+          </motion.section>
+        )}
+
         {roomProducts.length === 0 ? (
           <motion.div 
             className={styles.emptyState}
@@ -238,16 +451,6 @@ const RoomDetailPage = () => {
                 <span></span><span></span><span></span>
               </div>
             </div>
-            <h3>Your room is empty</h3>
-            <p>Start curating your perfect space by adding furniture from our collection</p>
-            <Link to="/shop" className={styles.primaryButton}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-              </svg>
-              Browse Collection
-            </Link>
           </motion.div>
         ) : (
           <>

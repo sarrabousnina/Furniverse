@@ -118,10 +118,7 @@ const Navigation = () => {
               <span className={styles.userName}>{user.name}</span>
             </Link>
           ) : (
-            <button
-              className={styles.userButton}
-              onClick={() => setIsAuthModalOpen(true)}
-            >
+            <Link to="/profile" className={styles.userButton}>
               <div className={styles.userAvatar}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -129,7 +126,7 @@ const Navigation = () => {
                 </svg>
               </div>
               <span className={styles.userName}>Sign In</span>
-            </button>
+            </Link>
           )}
 
           {/* Theme Toggle Button */}
