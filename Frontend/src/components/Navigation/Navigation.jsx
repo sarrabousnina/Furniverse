@@ -18,6 +18,7 @@ const Navigation = () => {
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/shop', label: 'Shop' },
+    { path: '/room-planner', label: 'Room Planner' },
   ];
 
   if (user) {

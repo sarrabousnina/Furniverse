@@ -20,6 +20,7 @@ import CheckoutPage from './pages/CheckoutPage/CheckoutPage';
 import RoomDetailPage from './pages/RoomDetailPage/RoomDetailPage';
 import AdminPage from './pages/AdminPage/AdminPage';
 import ComparisonPage from './pages/ComparisonPage/ComparisonPage';
+import RoomPlannerPage from './pages/RoomPlannerPage/RoomPlannerPage';
 
 // Components
 import Navigation from './components/Navigation/Navigation';
@@ -62,6 +63,7 @@ function AppContent() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/compare" element={<ComparisonPage />} />
+        <Route path="/room-planner" element={<RoomPlannerPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
